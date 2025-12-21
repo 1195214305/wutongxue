@@ -1,10 +1,15 @@
 // 通义千问 API 服务 - 纯前端版本
-const API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY
+// 注意：生产环境建议通过环境变量配置
+const API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY || 'sk-54ae495d0e8e4dfb92607467bfcdf357'
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
 export async function callQwenAPI(messages, options = {}) {
   const { temperature = 0.8, maxTokens = 1500 } = options
+
+  if (!API_KEY) {
+    throw new Error('API Key 未配置')
+  }
 
   const response = await fetch(API_URL, {
     method: 'POST',
@@ -22,7 +27,8 @@ export async function callQwenAPI(messages, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || '请求失败')
+    console.error('API 错误:', response.status, error)
+    throw new Error(error.error?.message || error.message || `请求失败 (${response.status})`)
   }
 
   const data = await response.json()
