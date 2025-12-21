@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #FAF7F5;
+  color: #2A1E17;
+  line-height: 1.6;
+}
+
+/* 自定义滚动条 - 温暖风格 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5EDE8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4BBA8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B8967A;
+}
+
+/* 文件上传区域样式 */
+.upload-zone {
+  border: 2px dashed #D4BBA8;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+  border-color: #96745A;
+  background-color: #FDF9F3;
+}
+
+.upload-zone.dragging {
+  border-color: #7A5C48;
+  background-color: #F5EDE8;
+}
+
+/* 对话气泡样式 */
+.chat-bubble {
+  position: relative;
+  max-width: 85%;
+}
+
+.chat-bubble.assistant {
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF9F3 100%);
+  border: 1px solid #E8D9CE;
+  border-radius: 2px 18px 18px 18px;
+}
+
+.chat-bubble.user {
+  background: linear-gradient(135deg, #5E4636 0%, #423024 100%);
+  color: #FAF7F5;
+  border-radius: 18px 2px 18px 18px;
+}
+
+/* 场景卡片 - 避免千篇一律的圆角矩形 */
+.scenario-card {
+  position: relative;
+  background: #FEFDFB;
+  border: 1px solid transparent;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.scenario-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #D4BBA8, #96745A);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.scenario-card:hover::before {
+  transform: scaleX(1);
+}
+
+.scenario-card:hover {
+  border-color: #E8D9CE;
+  box-shadow: 0 8px 30px -5px rgba(150, 116, 90, 0.2);
+  transform: translateY(-2px);
+}
+
+.scenario-card.selected {
+  border-color: #96745A;
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF9F3 100%);
+}
+
+.scenario-card.selected::before {
+  transform: scaleX(1);
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -3px rgba(94, 70, 54, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #5E4636;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid #D4BBA8;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #FDF9F3;
+  border-color: #96745A;
+}
+
+/* 输入框样式 */
+.input-field {
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #96745A;
+  box-shadow: 0 0 0 3px rgba(150, 116, 90, 0.1);
+}
+
+/* 打字机效果 */
+@keyframes typing {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #B8967A;
+  border-radius: 50%;
+  margin: 0 2px;
+  animation: typing 0.6s infinite alternate;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 进度条 */
+.progress-bar {
+  height: 4px;
+  background: #E8D9CE;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #B8967A, #96745A);
+  transition: width 0.5s ease;
+}
