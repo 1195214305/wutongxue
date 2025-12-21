@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import axios from 'axios'
+import { generateScenario, continueChat, getSummary } from '../services/api'
 
-function ChatInterface({ sessionId, scenario, fileName }) {
+function ChatInterface({ scenario, fileName, fileContent }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isStarting, setIsStarting] = useState(true)
   const [showSummary, setShowSummary] = useState(false)
   const [summary, setSummary] = useState('')
+  const [apiMessages, setApiMessages] = useState([]) // 用于API调用的消息历史
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -26,18 +27,23 @@ function ChatInterface({ sessionId, scenario, fileName }) {
   const startLearning = async () => {
     setIsStarting(true)
     try {
-      const response = await axios.post('/api/start', { sessionId })
-      if (response.data.success) {
-        setMessages([{
-          role: 'assistant',
-          content: response.data.message
-        }])
-      }
+      const result = await generateScenario(fileContent, scenario)
+
+      // 保存API消息历史
+      setApiMessages([
+        { role: 'system', content: result.systemPrompt },
+        { role: 'assistant', content: result.response }
+      ])
+
+      setMessages([{
+        role: 'assistant',
+        content: result.response
+      }])
     } catch (err) {
       console.error('开始学习失败:', err)
       setMessages([{
         role: 'assistant',
-        content: '抱歉，启动学习场景时遇到了问题。请刷新页面重试。'
+        content: '抱歉，启动学习场景时遇到了问题。请检查网络连接或刷新页面重试。\n\n错误信息：' + err.message
       }])
     } finally {
       setIsStarting(false)
@@ -53,17 +59,19 @@ function ChatInterface({ sessionId, scenario, fileName }) {
     setIsLoading(true)
 
     try {
-      const response = await axios.post('/api/chat', {
-        sessionId,
-        message: userMessage
-      })
+      const response = await continueChat(apiMessages, userMessage)
 
-      if (response.data.success) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: response.data.message
-        }])
-      }
+      // 更新API消息历史
+      setApiMessages(prev => [
+        ...prev,
+        { role: 'user', content: userMessage },
+        { role: 'assistant', content: response }
+      ])
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: response
+      }])
     } catch (err) {
       console.error('发送消息失败:', err)
       setMessages(prev => [...prev, {
@@ -82,13 +90,12 @@ function ChatInterface({ sessionId, scenario, fileName }) {
     }
   }
 
-  const getSummary = async () => {
+  const handleGetSummary = async () => {
     setShowSummary(true)
+    setSummary('')
     try {
-      const response = await axios.get(`/api/summary/${sessionId}`)
-      if (response.data.success) {
-        setSummary(response.data.summary)
-      }
+      const result = await getSummary(apiMessages)
+      setSummary(result)
     } catch (err) {
       console.error('获取摘要失败:', err)
       setSummary('获取学习摘要失败，请重试。')
@@ -122,7 +129,7 @@ function ChatInterface({ sessionId, scenario, fileName }) {
           </div>
         </div>
         <button
-          onClick={getSummary}
+          onClick={handleGetSummary}
           className="btn-secondary text-sm py-2 px-4"
         >
           <span className="flex items-center gap-2">

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import axios from 'axios'
 
 function UploadSection({ onSuccess }) {
   const [isDragging, setIsDragging] = useState(false)
@@ -38,24 +37,44 @@ function UploadSection({ onSuccess }) {
     setError('')
     setIsUploading(true)
 
-    const formData = new FormData()
-    formData.append('file', file)
-
     try {
-      const response = await axios.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      // 纯前端读取文件内容
+      const content = await readFileContent(file)
 
-      if (response.data.success) {
-        onSuccess(response.data)
-      }
+      // 生成会话ID
+      const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2)
+
+      onSuccess({
+        sessionId,
+        fileName: file.name,
+        content
+      })
     } catch (err) {
-      setError(err.response?.data?.error || '上传失败，请重试')
+      setError(err.message || '文件读取失败，请重试')
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const readFileContent = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onload = (e) => {
+        resolve(e.target.result)
+      }
+
+      reader.onerror = () => {
+        reject(new Error('文件读取失败'))
+      }
+
+      // 只支持文本文件
+      if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        reader.readAsText(file, 'UTF-8')
+      } else {
+        reject(new Error('目前仅支持 TXT 和 Markdown 文件'))
+      }
+    })
   }
 
   return (
@@ -84,18 +103,17 @@ function UploadSection({ onSuccess }) {
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".txt,.md,.pdf,.doc,.docx"
+          accept=".txt,.md"
           onChange={handleFileSelect}
         />
 
         {isUploading ? (
           <div className="py-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-warm-200 border-t-warm-600 animate-spin" />
-            <p className="text-warm-600 font-medium">正在上传...</p>
+            <p className="text-warm-600 font-medium">正在读取文件...</p>
           </div>
         ) : (
           <>
-            {/* 上传图标 - SVG而非emoji */}
             <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-cream-100 flex items-center justify-center">
               <svg className="w-10 h-10 text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -106,7 +124,7 @@ function UploadSection({ onSuccess }) {
               拖拽文件到这里，或点击选择
             </p>
             <p className="text-warm-400 text-sm">
-              支持 TXT、Markdown、PDF、Word 格式
+              支持 TXT、Markdown 格式
             </p>
           </>
         )}
@@ -122,7 +140,6 @@ function UploadSection({ onSuccess }) {
         </motion.div>
       )}
 
-      {/* 特性说明 */}
       <div className="mt-12 grid grid-cols-3 gap-6">
         {[
           {

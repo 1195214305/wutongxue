@@ -9,11 +9,13 @@ function App() {
   const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话
   const [sessionId, setSessionId] = useState(null)
   const [fileName, setFileName] = useState('')
+  const [fileContent, setFileContent] = useState('') // 新增：存储文件内容
   const [scenario, setScenario] = useState(null)
 
   const handleUploadSuccess = (data) => {
     setSessionId(data.sessionId)
     setFileName(data.fileName)
+    setFileContent(data.content) // 保存文件内容
     setStep(2)
   }
 
@@ -31,6 +33,7 @@ function App() {
     setStep(1)
     setSessionId(null)
     setFileName('')
+    setFileContent('')
     setScenario(null)
   }
 
@@ -97,7 +100,6 @@ function App() {
             >
               <ScenarioSelector
                 fileName={fileName}
-                sessionId={sessionId}
                 selectedScenario={scenario}
                 onSelect={handleScenarioSelect}
                 onStart={handleStartLearning}
@@ -114,9 +116,9 @@ function App() {
               transition={{ duration: 0.3 }}
             >
               <ChatInterface
-                sessionId={sessionId}
                 scenario={scenario}
                 fileName={fileName}
+                fileContent={fileContent}
               />
             </motion.div>
           )}

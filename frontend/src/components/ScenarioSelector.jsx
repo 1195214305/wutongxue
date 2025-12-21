@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import axios from 'axios'
 
 const scenarios = [
   {
@@ -61,18 +60,9 @@ const colorClasses = {
   }
 }
 
-function ScenarioSelector({ fileName, sessionId, selectedScenario, onSelect, onStart }) {
-  const handleScenarioClick = async (scenarioId) => {
+function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart }) {
+  const handleScenarioClick = (scenarioId) => {
     onSelect(scenarioId)
-
-    try {
-      await axios.post('/api/scenario', {
-        sessionId,
-        scenario: scenarioId
-      })
-    } catch (err) {
-      console.error('设置场景失败:', err)
-    }
   }
 
   return (
