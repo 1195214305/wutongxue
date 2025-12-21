@@ -3,8 +3,8 @@ import * as pdfjsLib from 'pdfjs-dist'
 import mammoth from 'mammoth'
 import * as XLSX from 'xlsx'
 
-// 设置 PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+// 设置 PDF.js worker - 使用 unpkg CDN（更可靠）
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
 // 支持的文件类型
 export const SUPPORTED_EXTENSIONS = {
