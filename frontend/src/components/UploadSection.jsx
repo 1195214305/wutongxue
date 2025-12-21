@@ -1,11 +1,16 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { parseFile, getAllSupportedExtensions, getFileType, getFileTypeLabel } from '../utils/fileParser'
 
 function UploadSection({ onSuccess }) {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
+  const [parseProgress, setParseProgress] = useState('')
   const fileInputRef = useRef(null)
+
+  const supportedExtensions = getAllSupportedExtensions()
+  const acceptString = supportedExtensions.join(',')
 
   const handleDragOver = (e) => {
     e.preventDefault()
@@ -36,45 +41,45 @@ function UploadSection({ onSuccess }) {
   const handleFile = async (file) => {
     setError('')
     setIsUploading(true)
+    setParseProgress('正在识别文件类型...')
 
     try {
-      // 纯前端读取文件内容
-      const content = await readFileContent(file)
+      const fileType = getFileType(file.name)
+
+      if (!fileType) {
+        throw new Error('不支持的文件格式')
+      }
+
+      setParseProgress(`正在解析 ${getFileTypeLabel(file.name)}...`)
+
+      // 解析文件内容
+      const content = await parseFile(file)
+
+      if (!content || content.trim().length === 0) {
+        throw new Error('文件内容为空')
+      }
 
       // 生成会话ID
       const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2)
 
-      onSuccess({
-        sessionId,
-        fileName: file.name,
-        content
-      })
+      setParseProgress('解析完成！')
+
+      setTimeout(() => {
+        onSuccess({
+          sessionId,
+          fileName: file.name,
+          content,
+          fileType
+        })
+      }, 300)
+
     } catch (err) {
+      console.error('文件解析错误:', err)
       setError(err.message || '文件读取失败，请重试')
     } finally {
       setIsUploading(false)
+      setParseProgress('')
     }
-  }
-
-  const readFileContent = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-
-      reader.onload = (e) => {
-        resolve(e.target.result)
-      }
-
-      reader.onerror = () => {
-        reject(new Error('文件读取失败'))
-      }
-
-      // 只支持文本文件
-      if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-        reader.readAsText(file, 'UTF-8')
-      } else {
-        reject(new Error('目前仅支持 TXT 和 Markdown 文件'))
-      }
-    })
   }
 
   return (
@@ -103,14 +108,14 @@ function UploadSection({ onSuccess }) {
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".txt,.md"
+          accept={acceptString}
           onChange={handleFileSelect}
         />
 
         {isUploading ? (
           <div className="py-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-warm-200 border-t-warm-600 animate-spin" />
-            <p className="text-warm-600 font-medium">正在读取文件...</p>
+            <p className="text-warm-600 font-medium">{parseProgress || '正在处理...'}</p>
           </div>
         ) : (
           <>
@@ -123,8 +128,8 @@ function UploadSection({ onSuccess }) {
             <p className="text-warm-700 font-medium text-lg mb-2">
               拖拽文件到这里，或点击选择
             </p>
-            <p className="text-warm-400 text-sm">
-              支持 TXT、Markdown 格式
+            <p className="text-warm-400 text-sm mb-4">
+              支持多种文件格式
             </p>
           </>
         )}
@@ -140,7 +145,64 @@ function UploadSection({ onSuccess }) {
         </motion.div>
       )}
 
-      <div className="mt-12 grid grid-cols-3 gap-6">
+      {/* 支持的文件格式说明 */}
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            ),
+            title: '文档',
+            formats: 'PDF, Word, TXT, MD'
+          },
+          {
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            ),
+            title: '表格',
+            formats: 'Excel, CSV'
+          },
+          {
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            ),
+            title: '代码',
+            formats: 'JS, Python, Java...'
+          },
+          {
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            ),
+            title: '更多',
+            formats: 'HTML, JSON, XML...'
+          }
+        ].map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="p-3 bg-cream-50 rounded-xl border border-cream-200 text-center"
+          >
+            <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-warm-100 text-warm-500 flex items-center justify-center">
+              {item.icon}
+            </div>
+            <h4 className="font-medium text-warm-700 text-sm">{item.title}</h4>
+            <p className="text-xs text-warm-400 mt-1">{item.formats}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* 特性说明 */}
+      <div className="mt-10 grid grid-cols-3 gap-6">
         {[
           {
             icon: (
@@ -174,7 +236,7 @@ function UploadSection({ onSuccess }) {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: 0.2 + index * 0.1 }}
             className="text-center p-4"
           >
             <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-sage-50 text-sage-500 flex items-center justify-center">
