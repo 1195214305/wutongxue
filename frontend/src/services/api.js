@@ -4,12 +4,49 @@ const API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY || 'sk-54ae495d0e8e4dfb92
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
+// 最大字符数限制（保守估计，1个token约等于1.5个中文字符）
+const MAX_CONTENT_LENGTH = 20000
+
+// 截断消息内容，保持在限制范围内
+function truncateMessages(messages, maxLength = MAX_CONTENT_LENGTH) {
+  let totalLength = 0
+  const truncatedMessages = []
+
+  // 从后往前遍历，保留最近的消息
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    const msgLength = msg.content.length
+
+    if (totalLength + msgLength > maxLength) {
+      // 如果是第一条消息（system prompt），截断内容
+      if (i === 0 && msg.role === 'system') {
+        const remainingLength = maxLength - totalLength
+        if (remainingLength > 500) {
+          truncatedMessages.unshift({
+            role: msg.role,
+            content: msg.content.slice(0, remainingLength - 100) + '\n\n[内容已截断...]'
+          })
+        }
+      }
+      break
+    }
+
+    totalLength += msgLength
+    truncatedMessages.unshift(msg)
+  }
+
+  return truncatedMessages
+}
+
 export async function callQwenAPI(messages, options = {}) {
   const { temperature = 0.8, maxTokens = 1500, model = 'qwen-turbo' } = options
 
   if (!API_KEY) {
     throw new Error('API Key 未配置')
   }
+
+  // 截断过长的消息
+  const truncatedMessages = truncateMessages(messages)
 
   const response = await fetch(API_URL, {
     method: 'POST',
@@ -19,7 +56,7 @@ export async function callQwenAPI(messages, options = {}) {
     },
     body: JSON.stringify({
       model,
-      messages,
+      messages: truncatedMessages,
       temperature,
       max_tokens: maxTokens
     })
@@ -35,6 +72,14 @@ export async function callQwenAPI(messages, options = {}) {
   return data.choices[0].message.content
 }
 
+// 截断文件内容
+function truncateContent(content, maxLength = 15000) {
+  if (content.length <= maxLength) {
+    return content
+  }
+  return content.slice(0, maxLength) + '\n\n[内容过长，已截断...]'
+}
+
 // 生成学习场景
 export async function generateScenario(content, scenario, model = 'qwen-turbo') {
   const scenarioMap = {
@@ -42,6 +87,9 @@ export async function generateScenario(content, scenario, model = 'qwen-turbo') 
     'campus': '校园学习场景，如导师带教或同学讨论',
     'practice': '实操场景，如现场问题解决'
   }
+
+  // 截断过长的内容
+  const truncatedContent = truncateContent(content)
 
   const systemPrompt = `你是一个情景式学习助手。请基于以下知识内容，构建一个${scenarioMap[scenario] || '自然的学习场景'}。
 
@@ -54,7 +102,7 @@ export async function generateScenario(content, scenario, model = 'qwen-turbo') 
 6. 使用生动的场景描述和人物对话
 
 知识内容：
-${content}
+${truncatedContent}
 
 请开始创建一个引人入胜的学习场景，介绍场景背景和主要人物，然后开始第一段对话。`
 
