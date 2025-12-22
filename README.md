@@ -64,42 +64,128 @@
 └── README.md
 ```
 
-## 快速开始
+## 本地开发
 
-### 1. 配置后端
+### 前置要求
+
+- Node.js 18+ (推荐 22.x)
+- npm 或 yarn
+- 通义千问 API Key ([获取地址](https://dashscope.console.aliyun.com/))
+
+### 第一步：克隆项目
 
 ```bash
+git clone https://github.com/1195214305/wutongxue.git
+cd wutongxue
+```
+
+### 第二步：配置并启动后端
+
+```bash
+# 进入后端目录
 cd backend
 
 # 安装依赖
 npm install
 
-# 复制环境变量配置
+# 复制环境变量配置文件
 cp .env.example .env
 
-# 编辑 .env 文件，填入你的 API Key
-# DASHSCOPE_API_KEY=your_api_key_here
-# JWT_SECRET=your_jwt_secret_here
-
-# 启动后端服务
-npm run dev
+# 编辑 .env 文件，填入你的配置
+# Windows 用户可以用记事本打开：notepad .env
+# Mac/Linux 用户：nano .env 或 vim .env
 ```
 
-后端服务将运行在 http://localhost:3001
-
-### 2. 配置前端
+**.env 文件内容：**
+```
+PORT=3001
+DASHSCOPE_API_KEY=你的通义千问API密钥
+JWT_SECRET=随便写一个复杂的字符串作为密钥
+```
 
 ```bash
+# 启动后端服务（开发模式，支持热重载）
+npm run dev
+
+# 或者生产模式启动
+npm start
+```
+
+看到 `服务器运行在 http://localhost:3001` 表示后端启动成功。
+
+### 第三步：配置并启动前端
+
+**新开一个终端窗口**，保持后端运行：
+
+```bash
+# 进入前端目录（从项目根目录）
 cd frontend
 
 # 安装依赖
 npm install
 
-# 启动开发服务器
+# 启动前端开发服务器
 npm run dev
 ```
 
-前端应用将运行在 http://localhost:3000
+看到类似以下输出表示前端启动成功：
+```
+  VITE v5.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.x.x:3000/
+```
+
+### 第四步：访问应用
+
+打开浏览器访问 http://localhost:3000 即可使用！
+
+### 常见问题
+
+**Q: 后端启动报错 `better-sqlite3` 相关错误？**
+A: 这个库需要编译原生模块，确保你安装了：
+- Windows: 安装 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+- Mac: 运行 `xcode-select --install`
+- Linux: 安装 `build-essential`
+
+**Q: 前端无法连接后端？**
+A: 确保后端正在运行，且端口 3001 没有被占用。检查前端控制台是否有 CORS 错误。
+
+**Q: 如何修改后端端口？**
+A: 修改 `backend/.env` 中的 `PORT` 值，同时修改 `frontend/src/contexts/AuthContext.jsx` 和 `frontend/src/App.jsx` 中的 `API_BASE`。
+
+## 生产部署
+
+### 前端部署（阿里云 ESA Pages）
+
+前端已部署在阿里云边缘安全加速 ESA 的 Pages 功能：
+
+1. 连接 GitHub 仓库
+2. 设置构建配置：
+   - 安装命令：`npm install`
+   - 构建命令：`npm run build`
+   - 根目录：`/frontend`
+   - 静态资源目录：`dist`
+   - Node.js 版本：`22.x`
+3. 添加环境变量：
+   - `VITE_API_BASE`: 后端 API 地址（如果有部署后端的话）
+
+### 后端部署
+
+后端需要部署到支持 Node.js 的服务器，可选方案：
+
+#### 方案一：阿里云函数计算 FC
+适合轻量使用，按调用次数计费。
+
+#### 方案二：阿里云 ECS 云服务器
+完整的服务器环境，需要自己维护。
+
+#### 方案三：其他云平台
+- [Railway](https://railway.app/) - 有免费额度
+- [Render](https://render.com/) - 有免费额度
+- [Vercel](https://vercel.com/) - 支持 Serverless Functions
+
+**注意**：如果不部署后端，用户系统（登录注册、云端同步）功能将不可用，但基本的学习功能仍可正常使用（数据存储在浏览器本地）。
 
 ## API 接口
 
@@ -140,28 +226,28 @@ npm run dev
 - Vite
 - Tailwind CSS
 - Framer Motion (动画)
-- Axios
 
-## 环境变量
+## 环境变量说明
 
 ### 后端 (.env)
-```
-PORT=3001
-DASHSCOPE_API_KEY=your_dashscope_api_key
-JWT_SECRET=your_jwt_secret_key
-```
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `PORT` | 否 | 服务端口，默认 3001 |
+| `DASHSCOPE_API_KEY` | 是 | 通义千问 API 密钥 |
+| `JWT_SECRET` | 是 | JWT 签名密钥，建议使用随机字符串 |
 
 ### 前端 (.env)
-```
-VITE_API_BASE=http://localhost:3001
-```
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `VITE_API_BASE` | 否 | 后端 API 地址，默认 http://localhost:3001 |
 
-## 注意事项
+## 数据存储
 
-1. 需要有效的通义千问 API Key
-2. 首次运行会自动创建 SQLite 数据库
-3. 上传的文件会临时存储在 `backend/uploads/` 目录
-4. 用户数据存储在 `backend/data/wutongxue.db`
+- **SQLite 数据库**：`backend/data/wutongxue.db`
+  - `users` 表：用户信息
+  - `sessions` 表：学习会话
+  - `messages` 表：对话消息
+- **上传文件**：`backend/uploads/` 目录
 
 ## 贡献
 
