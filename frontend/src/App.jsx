@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
   SESSIONS: 'wutongxue_sessions'
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function AppContent() {
   const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话
