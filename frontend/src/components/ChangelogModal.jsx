@@ -2,6 +2,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.7.0',
+    date: '2025-12-23',
+    highlighted: true,
+    highlightLabel: '重大更新',
+    changes: [
+      { type: 'feature', text: '学习数据统计仪表盘 - 可视化学习时长、次数、趋势' },
+      { type: 'feature', text: '智能笔记系统 - 随时记录学习心得，支持导出' },
+      { type: 'feature', text: '知识点收藏夹 - 收藏重要知识点，分类管理' },
+      { type: 'feature', text: '学习目标与打卡系统 - 设定目标，连续打卡' },
+      { type: 'feature', text: '错题本系统 - 自动收集测验错题，支持重做' },
+      { type: 'feature', text: '学习成就系统 - 20+成就徽章，激励学习' },
+      { type: 'feature', text: '学习提醒通知 - 定时提醒，养成学习习惯' },
+      { type: 'improve', text: '新增右侧工具栏，快速访问所有功能' }
+    ]
+  },
+  {
     version: 'v1.6.2',
     date: '2025-12-23',
     changes: [

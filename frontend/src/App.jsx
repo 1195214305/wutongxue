@@ -9,6 +9,14 @@ import ChangelogModal from './components/ChangelogModal'
 import AuthModal from './components/AuthModal'
 import UserTour from './components/UserTour'
 import AdminPanel from './components/AdminPanel'
+import ToolsBar from './components/ToolsBar'
+import LearningDashboard from './components/LearningDashboard'
+import NotesPanel from './components/NotesPanel'
+import FavoritesPanel from './components/FavoritesPanel'
+import GoalsPanel from './components/GoalsPanel'
+import WrongQuestionsPanel from './components/WrongQuestionsPanel'
+import AchievementsPanel from './components/AchievementsPanel'
+import ReminderPanel from './components/ReminderPanel'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // localStorage keys
@@ -51,6 +59,15 @@ function AppContent() {
   const [authMode, setAuthMode] = useState('login')
   const [showAdmin, setShowAdmin] = useState(false)
   const [adminClickCount, setAdminClickCount] = useState(0)
+
+  // 新功能面板状态
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [showNotes, setShowNotes] = useState(false)
+  const [showFavorites, setShowFavorites] = useState(false)
+  const [showGoals, setShowGoals] = useState(false)
+  const [showWrongQuestions, setShowWrongQuestions] = useState(false)
+  const [showAchievements, setShowAchievements] = useState(false)
+  const [showReminder, setShowReminder] = useState(false)
 
   // 学习历史（本地 + 云端）
   const [history, setHistory] = useState(() => {
@@ -114,6 +131,13 @@ function AppContent() {
         setShowChangelog(false)
         setShowAuth(false)
         setShowAdmin(false)
+        setShowDashboard(false)
+        setShowNotes(false)
+        setShowFavorites(false)
+        setShowGoals(false)
+        setShowWrongQuestions(false)
+        setShowAchievements(false)
+        setShowReminder(false)
       }
       // Ctrl+Shift+A 打开管理员面板
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
@@ -487,7 +511,7 @@ function AppContent() {
         <button
           onClick={handleAdminClick}
           className="w-8 h-8 rounded-full bg-white/80 dark:bg-warm-800/80 backdrop-blur-sm border border-cream-200 dark:border-warm-700 flex items-center justify-center text-warm-400 dark:text-warm-500 hover:text-warm-600 dark:hover:text-warm-300 transition-colors opacity-50 hover:opacity-100"
-          title="v1.6.0"
+          title="v1.7"
         >
           <span className="text-xs font-medium">v1</span>
         </button>
@@ -501,6 +525,26 @@ function AppContent() {
       <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} initialMode={authMode} />
       <AdminPanel isOpen={showAdmin} onClose={() => setShowAdmin(false)} />
+
+      {/* 新功能面板 */}
+      <LearningDashboard isOpen={showDashboard} onClose={() => setShowDashboard(false)} />
+      <NotesPanel isOpen={showNotes} onClose={() => setShowNotes(false)} sessionId={sessionId} fileName={fileName} />
+      <FavoritesPanel isOpen={showFavorites} onClose={() => setShowFavorites(false)} />
+      <GoalsPanel isOpen={showGoals} onClose={() => setShowGoals(false)} />
+      <WrongQuestionsPanel isOpen={showWrongQuestions} onClose={() => setShowWrongQuestions(false)} />
+      <AchievementsPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
+      <ReminderPanel isOpen={showReminder} onClose={() => setShowReminder(false)} />
+
+      {/* 工具栏 */}
+      <ToolsBar
+        onOpenDashboard={() => setShowDashboard(true)}
+        onOpenNotes={() => setShowNotes(true)}
+        onOpenFavorites={() => setShowFavorites(true)}
+        onOpenGoals={() => setShowGoals(true)}
+        onOpenWrongQuestions={() => setShowWrongQuestions(true)}
+        onOpenAchievements={() => setShowAchievements(true)}
+        onOpenReminder={() => setShowReminder(true)}
+      />
 
       {/* 新用户引导 */}
       <UserTour />
