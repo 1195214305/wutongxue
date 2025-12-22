@@ -8,6 +8,7 @@ import HelpModal from './components/HelpModal'
 import ChangelogModal from './components/ChangelogModal'
 import AuthModal from './components/AuthModal'
 import UserTour from './components/UserTour'
+import AdminPanel from './components/AdminPanel'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // localStorage keys
@@ -41,6 +42,8 @@ function AppContent() {
   const [showChangelog, setShowChangelog] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [authMode, setAuthMode] = useState('login')
+  const [showAdmin, setShowAdmin] = useState(false)
+  const [adminClickCount, setAdminClickCount] = useState(0)
 
   // 学习历史（本地 + 云端）
   const [history, setHistory] = useState(() => {
@@ -90,13 +93,20 @@ function AppContent() {
     }
   }, [darkMode])
 
-  // ESC 键关闭弹窗
+  // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // ESC 键关闭弹窗
       if (e.key === 'Escape') {
         setShowHelp(false)
         setShowChangelog(false)
         setShowAuth(false)
+        setShowAdmin(false)
+      }
+      // Ctrl+Shift+A 打开管理员面板
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault()
+        setShowAdmin(true)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -326,6 +336,18 @@ function AppContent() {
     setShowAuth(true)
   }
 
+  // 隐藏的管理员入口（点击5次触发）
+  const handleAdminClick = () => {
+    const newCount = adminClickCount + 1
+    setAdminClickCount(newCount)
+    if (newCount >= 5) {
+      setShowAdmin(true)
+      setAdminClickCount(0)
+    }
+    // 2秒内没有继续点击则重置
+    setTimeout(() => setAdminClickCount(0), 2000)
+  }
+
   return (
     <div className={`min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors`}>
       <Header
@@ -433,8 +455,8 @@ function AppContent() {
         </AnimatePresence>
       </main>
 
-      {/* 底部 GitHub 链接 */}
-      <div className="fixed bottom-4 left-4 z-40">
+      {/* 底部 GitHub 链接和隐藏管理入口 */}
+      <div className="fixed bottom-4 left-4 z-40 flex items-center gap-2">
         <a
           href="https://github.com/1195214305/wutongxue"
           target="_blank"
@@ -446,6 +468,14 @@ function AppContent() {
           </svg>
           <span>GitHub</span>
         </a>
+        {/* 隐藏的管理员入口 - 点击5次打开 */}
+        <button
+          onClick={handleAdminClick}
+          className="w-8 h-8 rounded-full bg-white/80 dark:bg-warm-800/80 backdrop-blur-sm border border-cream-200 dark:border-warm-700 flex items-center justify-center text-warm-400 dark:text-warm-500 hover:text-warm-600 dark:hover:text-warm-300 transition-colors opacity-50 hover:opacity-100"
+          title="v1.6.0"
+        >
+          <span className="text-xs font-medium">v1</span>
+        </button>
       </div>
 
       {/* 底部装饰 */}
@@ -455,6 +485,7 @@ function AppContent() {
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
       <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} initialMode={authMode} />
+      <AdminPanel isOpen={showAdmin} onClose={() => setShowAdmin(false)} />
 
       {/* 新用户引导 */}
       <UserTour />

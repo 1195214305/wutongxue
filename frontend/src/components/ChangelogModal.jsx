@@ -5,6 +5,7 @@ const CHANGELOG = [
     version: 'v1.6.0',
     date: '2025-12-23',
     changes: [
+      { type: 'feature', text: '添加管理员后台面板，可视化查看用户数据' },
       { type: 'feature', text: '添加 .doc 格式文件支持（旧版 Word 文档）' },
       { type: 'feature', text: '添加语音朗读功能，可朗读 AI 回复' },
       { type: 'feature', text: '添加消息复制功能，一键复制对话内容' },

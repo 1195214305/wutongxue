@@ -579,37 +579,142 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
 
 // ==================== 管理员接口 ====================
 
-// 查看注册用户统计（需要管理员密钥）
-app.get('/api/admin/stats', (req, res) => {
+// 管理员密钥验证中间件
+const ADMIN_KEY = process.env.ADMIN_KEY || 'wutongxue_admin_2025';
+
+const adminAuth = (req, res, next) => {
+  const adminKey = req.headers['x-admin-key'] || req.query.key;
+  if (adminKey !== ADMIN_KEY) {
+    return res.status(403).json({ error: '无权访问' });
+  }
+  next();
+};
+
+// 验证管理员密钥
+app.post('/api/admin/verify', (req, res) => {
+  const { key } = req.body;
+  if (key === ADMIN_KEY) {
+    res.json({ success: true, message: '验证成功' });
+  } else {
+    res.status(403).json({ error: '密钥错误' });
+  }
+});
+
+// 获取详细统计数据
+app.get('/api/admin/stats', adminAuth, (req, res) => {
   try {
-    const adminKey = req.query.key;
-    const expectedKey = process.env.ADMIN_KEY || 'wutongxue_admin_2025';
-
-    if (adminKey !== expectedKey) {
-      return res.status(403).json({ error: '无权访问' });
-    }
-
-    const users = db.prepare('SELECT id, username, nickname, created_at FROM users ORDER BY created_at DESC').all();
+    // 用户总数
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
     const sessionCount = db.prepare('SELECT COUNT(*) as count FROM sessions').get().count;
     const messageCount = db.prepare('SELECT COUNT(*) as count FROM messages').get().count;
+
+    // 今日新注册用户
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = today.getTime();
+    const todayUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE created_at >= ?').get(todayTimestamp).count;
+
+    // 今日活跃会话
+    const todaySessions = db.prepare('SELECT COUNT(*) as count FROM sessions WHERE updated_at >= ?').get(todayTimestamp).count;
 
     res.json({
       success: true,
       stats: {
-        userCount: users.length,
+        userCount,
         sessionCount,
-        messageCount
-      },
-      users: users.map(u => ({
-        id: u.id,
-        username: u.username,
-        nickname: u.nickname,
-        createdAt: new Date(u.created_at).toLocaleString('zh-CN')
-      }))
+        messageCount,
+        todayUsers,
+        todaySessions
+      }
     });
   } catch (error) {
     console.error('获取统计信息错误:', error);
     res.status(500).json({ error: '获取统计信息失败' });
+  }
+});
+
+// 获取用户列表（含详细活跃数据）
+app.get('/api/admin/users', adminAuth, (req, res) => {
+  try {
+    const users = db.prepare(`
+      SELECT
+        u.id,
+        u.username,
+        u.nickname,
+        u.created_at,
+        COUNT(DISTINCT s.id) as session_count,
+        COUNT(m.id) as message_count,
+        MAX(s.updated_at) as last_active
+      FROM users u
+      LEFT JOIN sessions s ON u.id = s.user_id
+      LEFT JOIN messages m ON s.id = m.session_id
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `).all();
+
+    res.json({
+      success: true,
+      users: users.map(u => ({
+        id: u.id,
+        username: u.username,
+        nickname: u.nickname,
+        createdAt: u.created_at,
+        sessionCount: u.session_count || 0,
+        messageCount: u.message_count || 0,
+        lastActive: u.last_active || u.created_at,
+        isActive: u.session_count > 0
+      }))
+    });
+  } catch (error) {
+    console.error('获取用户列表错误:', error);
+    res.status(500).json({ error: '获取用户列表失败' });
+  }
+});
+
+// 获取用户详情（学习记录）
+app.get('/api/admin/users/:userId', adminAuth, (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = db.prepare('SELECT id, username, nickname, created_at FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    const sessions = db.prepare(`
+      SELECT
+        s.id,
+        s.file_name,
+        s.scenario,
+        s.model,
+        s.created_at,
+        s.updated_at,
+        COUNT(m.id) as message_count
+      FROM sessions s
+      LEFT JOIN messages m ON s.id = m.session_id
+      WHERE s.user_id = ?
+      GROUP BY s.id
+      ORDER BY s.updated_at DESC
+    `).all(userId);
+
+    res.json({
+      success: true,
+      user: {
+        ...user,
+        sessions: sessions.map(s => ({
+          id: s.id,
+          fileName: s.file_name,
+          scenario: s.scenario,
+          model: s.model,
+          createdAt: s.created_at,
+          updatedAt: s.updated_at,
+          messageCount: s.message_count || 0
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('获取用户详情错误:', error);
+    res.status(500).json({ error: '获取用户详情失败' });
   }
 });
 
