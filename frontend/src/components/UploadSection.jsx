@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { parseFile, getAllSupportedExtensions, getFileType, getFileTypeLabel } from '../utils/fileParser'
 
-function UploadSection({ onSuccess }) {
+function UploadSection({ onSuccess, history = [] }) {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
@@ -82,19 +82,38 @@ function UploadSection({ onSuccess }) {
     }
   }
 
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now - date
+
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)} 天前`
+
+    return date.toLocaleDateString('zh-CN')
+  }
+
+  const scenarioNames = {
+    workplace: '职场办公',
+    campus: '校园学习',
+    practice: '实操场景'
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-serif font-semibold text-warm-800 mb-3">
+        <h2 className="text-2xl sm:text-3xl font-serif font-semibold text-warm-800 dark:text-cream-100 mb-3">
           开始你的学习之旅
         </h2>
-        <p className="text-warm-500 text-lg">
+        <p className="text-warm-500 dark:text-warm-400 text-base sm:text-lg">
           上传你想要学习的知识文件，我们将为你创造沉浸式的学习体验
         </p>
       </div>
 
       <motion.div
-        className={`upload-zone rounded-2xl p-12 text-center cursor-pointer ${
+        className={`upload-zone rounded-2xl p-8 sm:p-12 text-center cursor-pointer ${
           isDragging ? 'dragging' : ''
         }`}
         onDragOver={handleDragOver}
@@ -114,21 +133,21 @@ function UploadSection({ onSuccess }) {
 
         {isUploading ? (
           <div className="py-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-warm-200 border-t-warm-600 animate-spin" />
-            <p className="text-warm-600 font-medium">{parseProgress || '正在处理...'}</p>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-warm-200 dark:border-warm-600 border-t-warm-600 dark:border-t-warm-400 animate-spin" />
+            <p className="text-warm-600 dark:text-warm-300 font-medium">{parseProgress || '正在处理...'}</p>
           </div>
         ) : (
           <>
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-cream-100 flex items-center justify-center">
-              <svg className="w-10 h-10 text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-cream-100 dark:bg-warm-700 flex items-center justify-center">
+              <svg className="w-10 h-10 text-warm-400 dark:text-warm-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
 
-            <p className="text-warm-700 font-medium text-lg mb-2">
+            <p className="text-warm-700 dark:text-cream-200 font-medium text-lg mb-2">
               拖拽文件到这里，或点击选择
             </p>
-            <p className="text-warm-400 text-sm mb-4">
+            <p className="text-warm-400 dark:text-warm-500 text-sm mb-4">
               支持多种文件格式
             </p>
           </>
@@ -139,14 +158,60 @@ function UploadSection({ onSuccess }) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 bg-terracotta-50 border border-terracotta-200 rounded-lg text-terracotta-600 text-sm text-center"
+          className="mt-4 p-4 bg-terracotta-50 dark:bg-terracotta-900/20 border border-terracotta-200 dark:border-terracotta-800 rounded-lg text-terracotta-600 dark:text-terracotta-400 text-sm text-center"
         >
           {error}
         </motion.div>
       )}
 
+      {/* 学习历史记录 */}
+      {history.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8"
+        >
+          <h3 className="text-lg font-medium text-warm-700 dark:text-cream-200 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            最近学习
+          </h3>
+          <div className="space-y-2">
+            {history.slice(0, 5).map((item, index) => (
+              <motion.div
+                key={item.id || index}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="p-3 bg-cream-50 dark:bg-warm-800 rounded-xl border border-cream-200 dark:border-warm-700 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-warm-100 dark:bg-warm-700 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-warm-500 dark:text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-warm-700 dark:text-cream-200 font-medium text-sm truncate">
+                      {item.fileName}
+                    </p>
+                    <p className="text-warm-400 dark:text-warm-500 text-xs">
+                      {scenarioNames[item.scenario]} · {formatTime(item.timestamp)}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 bg-warm-100 dark:bg-warm-700 text-warm-500 dark:text-warm-400 rounded-full flex-shrink-0">
+                  {item.model === 'qwen-max' ? 'Max' : 'Turbo'}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* 支持的文件格式说明 */}
-      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
           {
             icon: (
@@ -190,19 +255,19 @@ function UploadSection({ onSuccess }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="p-3 bg-cream-50 rounded-xl border border-cream-200 text-center"
+            className="p-3 bg-cream-50 dark:bg-warm-800 rounded-xl border border-cream-200 dark:border-warm-700 text-center"
           >
-            <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-warm-100 text-warm-500 flex items-center justify-center">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-warm-100 dark:bg-warm-700 text-warm-500 dark:text-warm-400 flex items-center justify-center">
               {item.icon}
             </div>
-            <h4 className="font-medium text-warm-700 text-sm">{item.title}</h4>
-            <p className="text-xs text-warm-400 mt-1">{item.formats}</p>
+            <h4 className="font-medium text-warm-700 dark:text-cream-200 text-sm">{item.title}</h4>
+            <p className="text-xs text-warm-400 dark:text-warm-500 mt-1">{item.formats}</p>
           </motion.div>
         ))}
       </div>
 
       {/* 特性说明 */}
-      <div className="mt-10 grid grid-cols-3 gap-6">
+      <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-6">
         {[
           {
             icon: (
@@ -237,13 +302,13 @@ function UploadSection({ onSuccess }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + index * 0.1 }}
-            className="text-center p-4"
+            className="text-center p-3 sm:p-4"
           >
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-sage-50 text-sage-500 flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-sage-50 dark:bg-sage-900/30 text-sage-500 dark:text-sage-400 flex items-center justify-center">
               {item.icon}
             </div>
-            <h3 className="font-medium text-warm-700 mb-1">{item.title}</h3>
-            <p className="text-sm text-warm-400">{item.desc}</p>
+            <h3 className="font-medium text-warm-700 dark:text-cream-200 mb-1 text-sm sm:text-base">{item.title}</h3>
+            <p className="text-xs sm:text-sm text-warm-400 dark:text-warm-500">{item.desc}</p>
           </motion.div>
         ))}
       </div>
