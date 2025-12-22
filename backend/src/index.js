@@ -521,6 +521,42 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
   }
 });
 
+// ==================== 管理员接口 ====================
+
+// 查看注册用户统计（需要管理员密钥）
+app.get('/api/admin/stats', (req, res) => {
+  try {
+    const adminKey = req.query.key;
+    const expectedKey = process.env.ADMIN_KEY || 'wutongxue_admin_2025';
+
+    if (adminKey !== expectedKey) {
+      return res.status(403).json({ error: '无权访问' });
+    }
+
+    const users = db.prepare('SELECT id, username, nickname, created_at FROM users ORDER BY created_at DESC').all();
+    const sessionCount = db.prepare('SELECT COUNT(*) as count FROM sessions').get().count;
+    const messageCount = db.prepare('SELECT COUNT(*) as count FROM messages').get().count;
+
+    res.json({
+      success: true,
+      stats: {
+        userCount: users.length,
+        sessionCount,
+        messageCount
+      },
+      users: users.map(u => ({
+        id: u.id,
+        username: u.username,
+        nickname: u.nickname,
+        createdAt: new Date(u.created_at).toLocaleString('zh-CN')
+      }))
+    });
+  } catch (error) {
+    console.error('获取统计信息错误:', error);
+    res.status(500).json({ error: '获取统计信息失败' });
+  }
+});
+
 // 获取学习进度摘要
 app.get('/api/summary/:sessionId', async (req, res) => {
   try {
