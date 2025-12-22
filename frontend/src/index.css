@@ -15,6 +15,13 @@ body {
   line-height: 1.6;
 }
 
+/* 深色模式 */
+.dark body,
+html.dark body {
+  background-color: #2A1E17;
+  color: #FAF7F5;
+}
+
 /* 自定义滚动条 - 温暖风格 */
 ::-webkit-scrollbar {
   width: 8px;
@@ -26,13 +33,25 @@ body {
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #423024;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #D4BBA8;
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #5E4636;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #B8967A;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #7A5C48;
 }
 
 /* 文件上传区域样式 */
@@ -149,6 +168,17 @@ body {
   border-color: #96745A;
 }
 
+/* 深色模式按钮 */
+.dark .btn-secondary {
+  color: #D4BBA8;
+  border-color: #5E4636;
+}
+
+.dark .btn-secondary:hover {
+  background: #423024;
+  border-color: #7A5C48;
+}
+
 /* 输入框样式 */
 .input-field {
   background: #FEFDFB;
@@ -158,12 +188,35 @@ body {
   font-size: 15px;
   transition: all 0.3s ease;
   width: 100%;
+  color: #2A1E17;
 }
 
 .input-field:focus {
   outline: none;
   border-color: #96745A;
   box-shadow: 0 0 0 3px rgba(150, 116, 90, 0.1);
+}
+
+/* 深色模式输入框 */
+.dark .input-field {
+  background: #423024;
+  border-color: #5E4636;
+  color: #FAF7F5;
+}
+
+.dark .input-field:focus {
+  border-color: #B8967A;
+  box-shadow: 0 0 0 3px rgba(150, 116, 90, 0.2);
+}
+
+.dark .input-field::placeholder {
+  color: #7A5C48;
+}
+
+/* 深色模式对话气泡 */
+.dark .chat-bubble.assistant {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #5E4636;
 }
 
 /* 打字机效果 */

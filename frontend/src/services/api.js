@@ -81,3 +81,41 @@ export async function getSummary(messages, model = 'qwen-turbo') {
   const response = await callQwenAPI(updatedMessages, { temperature: 0.5, maxTokens: 800, model })
   return response
 }
+
+// 生成知识测验
+export async function generateQuiz(messages, model = 'qwen-turbo') {
+  const quizPrompt = `请根据之前的对话内容，生成3道选择题来测试用户的学习效果。
+
+请严格按照以下JSON格式返回，不要添加任何其他内容：
+{
+  "questions": [
+    {
+      "question": "题目内容",
+      "options": ["选项A", "选项B", "选项C", "选项D"],
+      "correctIndex": 0,
+      "explanation": "答案解释"
+    }
+  ]
+}
+
+注意：
+1. correctIndex 是正确答案的索引（0-3）
+2. 题目要基于对话中讲解的知识点
+3. 选项要有一定迷惑性但不要太难
+4. 每道题都要有简短的答案解释`
+
+  const updatedMessages = [...messages, { role: 'user', content: quizPrompt }]
+  const response = await callQwenAPI(updatedMessages, { temperature: 0.3, maxTokens: 1500, model })
+
+  try {
+    // 尝试从响应中提取JSON
+    const jsonMatch = response.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0])
+    }
+    throw new Error('无法解析测验数据')
+  } catch (err) {
+    console.error('解析测验数据失败:', err)
+    return { error: '生成测验失败，请重试。' }
+  }
+}
