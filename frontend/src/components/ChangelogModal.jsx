@@ -2,6 +2,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.6.1',
+    date: '2025-12-23',
+    changes: [
+      { type: 'feature', text: '迁移至 Turso 云端数据库，数据永久保存' },
+      { type: 'fix', text: '修复服务重启后用户数据丢失的问题' },
+      { type: 'improve', text: '提升数据库稳定性和访问速度' }
+    ]
+  },
+  {
     version: 'v1.6.0',
     date: '2025-12-23',
     changes: [

@@ -15,20 +15,17 @@
 - **学习进度追踪**: 随时查看已学习的知识点摘要
 - **知识点测验**: 通过互动测验巩固所学知识
 
-### v1.6.0 新功能
+### v1.6.1 新功能
+- **云端数据库**: 迁移至 Turso 云端数据库，用户数据永久保存
+- **数据持久化**: 修复服务重启后数据丢失的问题
+- **性能优化**: 提升数据库访问速度和稳定性
+
+### v1.6.0 功能
 - **管理员后台**: 可视化查看用户数据和使用情况（快捷键 Ctrl+Shift+A）
 - **旧版 Word 支持**: 支持 .doc 格式文件（Word 97-2003）
 - **语音朗读**: 点击朗读按钮，AI 回复可语音播放
 - **消息复制**: 一键复制对话内容
 - **服务监控优化**: 后端健康检查接口，确保服务稳定
-
-#### 健康检查生效验证
-
-通过 cron-job.org 定时监控，后端健康检查接口已成功运行：
-
-![健康检查成功](docs/health-check-success.png)
-
-*之前返回 404 Not Found，添加健康检查路由后返回 200 OK*
 
 ### v1.5.0 功能
 - **用户系统**: 注册登录后，学习记录自动同步到云端
@@ -50,9 +47,8 @@
 ├── backend/           # 后端服务
 │   ├── src/
 │   │   ├── index.js   # 主服务文件
-│   │   └── db.js      # 数据库配置
-│   ├── data/          # SQLite 数据库存储
-│   ├── uploads/       # 上传文件存储
+│   │   └── db.js      # Turso 数据库配置
+│   ├── uploads/       # 上传文件临时存储
 │   ├── package.json
 │   └── .env.example   # 环境变量示例
 ├── frontend/          # 前端应用
@@ -116,6 +112,8 @@ cp .env.example .env
 PORT=3001
 DASHSCOPE_API_KEY=你的通义千问API密钥
 JWT_SECRET=随便写一个复杂的字符串作为密钥
+TURSO_DATABASE_URL=libsql://你的数据库.turso.io
+TURSO_AUTH_TOKEN=你的Turso认证令牌
 ```
 
 ```bash
@@ -157,11 +155,8 @@ npm run dev
 
 ### 常见问题
 
-**Q: 后端启动报错 `better-sqlite3` 相关错误？**
-A: 这个库需要编译原生模块，确保你安装了：
-- Windows: 安装 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-- Mac: 运行 `xcode-select --install`
-- Linux: 安装 `build-essential`
+**Q: 如何获取 Turso 数据库？**
+A: 访问 [Turso](https://turso.tech/) 注册账号，创建数据库后获取连接地址和认证令牌。
 
 **Q: 前端无法连接后端？**
 A: 确保后端正在运行，且端口 3001 没有被占用。检查前端控制台是否有 CORS 错误。
@@ -239,7 +234,7 @@ A: 修改 `backend/.env` 中的 `PORT` 值，同时修改 `frontend/src/contexts
 ### 后端
 - Node.js + Express
 - 通义千问 API (Qwen Turbo/Max)
-- SQLite (better-sqlite3)
+- Turso 云端数据库 (libSQL)
 - JWT 认证
 - bcryptjs 密码加密
 
@@ -257,6 +252,8 @@ A: 修改 `backend/.env` 中的 `PORT` 值，同时修改 `frontend/src/contexts
 | `PORT` | 否 | 服务端口，默认 3001 |
 | `DASHSCOPE_API_KEY` | 是 | 通义千问 API 密钥 |
 | `JWT_SECRET` | 是 | JWT 签名密钥，建议使用随机字符串 |
+| `TURSO_DATABASE_URL` | 是 | Turso 数据库连接地址 |
+| `TURSO_AUTH_TOKEN` | 是 | Turso 认证令牌 |
 
 ### 前端 (.env)
 | 变量名 | 必填 | 说明 |
@@ -265,11 +262,11 @@ A: 修改 `backend/.env` 中的 `PORT` 值，同时修改 `frontend/src/contexts
 
 ## 数据存储
 
-- **SQLite 数据库**：`backend/data/wutongxue.db`
+- **Turso 云端数据库**：数据永久保存在云端
   - `users` 表：用户信息
   - `sessions` 表：学习会话
   - `messages` 表：对话消息
-- **上传文件**：`backend/uploads/` 目录
+- **上传文件**：`backend/uploads/` 目录（临时存储）
 
 ## 贡献
 
