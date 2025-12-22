@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateScenario, continueChat, getSummary, generateQuiz } from '../services/api'
 
-function ChatInterface({ sessionId, scenario, fileName, fileContent, model, restoredMessages, onSaveSession }) {
+function ChatInterface({ sessionId, scenario, fileName, fileContent, model, restoredMessages, onSaveSession, fontSize = 16 }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -365,9 +365,12 @@ function ChatInterface({ sessionId, scenario, fileName, fileContent, model, rest
                         <span className="text-xs text-warm-400 dark:text-warm-500 font-medium">学习助手</span>
                       </div>
                     )}
-                    <div className={`whitespace-pre-wrap leading-relaxed text-sm sm:text-base ${
-                      message.role === 'user' ? 'text-cream-50' : 'text-warm-700 dark:text-cream-200'
-                    }`}>
+                    <div
+                      className={`whitespace-pre-wrap leading-relaxed ${
+                        message.role === 'user' ? 'text-cream-50' : 'text-warm-700 dark:text-cream-200'
+                      }`}
+                      style={{ fontSize: `${fontSize}px` }}
+                    >
                       {message.content}
                       {isStreaming && index === messages.length - 1 && message.role === 'assistant' && (
                         <span className="inline-block w-2 h-4 bg-warm-500 dark:bg-warm-400 animate-pulse ml-1" />

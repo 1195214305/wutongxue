@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
+import MusicPlayer from './MusicPlayer'
+import PomodoroTimer from './PomodoroTimer'
+import SettingsPanel from './SettingsPanel'
 
 const MODELS = [
   { id: 'qwen-turbo', name: 'Qwen Turbo', desc: '快速响应，适合日常学习' },
   { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
 ]
 
-function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth }) {
+function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth, fontSize, onFontSizeChange }) {
   const [showModelMenu, setShowModelMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const modelMenuRef = useRef(null)
@@ -75,6 +78,15 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
             </button>
+
+            {/* 环境音效播放器 */}
+            <MusicPlayer />
+
+            {/* 番茄钟计时器 */}
+            <PomodoroTimer />
+
+            {/* 设置面板 */}
+            <SettingsPanel fontSize={fontSize} onFontSizeChange={onFontSizeChange} />
 
             {/* 深色模式切换 */}
             <button

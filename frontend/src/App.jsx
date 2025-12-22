@@ -15,7 +15,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 const STORAGE_KEYS = {
   DARK_MODE: 'wutongxue_dark_mode',
   HISTORY: 'wutongxue_history',
-  SESSIONS: 'wutongxue_sessions'
+  SESSIONS: 'wutongxue_sessions',
+  FONT_SIZE: 'wutongxue_font_size'
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
@@ -35,6 +36,12 @@ function AppContent() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.DARK_MODE)
     return saved ? JSON.parse(saved) : false
+  })
+
+  // 字体大小
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.FONT_SIZE)
+    return saved ? parseInt(saved) : 16
   })
 
   // 弹窗状态
@@ -92,6 +99,11 @@ function AppContent() {
       document.documentElement.classList.remove('dark')
     }
   }, [darkMode])
+
+  // 字体大小保存
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.FONT_SIZE, fontSize.toString())
+  }, [fontSize])
 
   // 键盘快捷键
   useEffect(() => {
@@ -360,6 +372,8 @@ function AppContent() {
         onShowHelp={() => setShowHelp(true)}
         onShowChangelog={() => setShowChangelog(true)}
         onShowAuth={handleShowAuth}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -449,6 +463,7 @@ function AppContent() {
                 model={currentModel}
                 restoredMessages={restoredMessages}
                 onSaveSession={saveSession}
+                fontSize={fontSize}
               />
             </motion.div>
           )}

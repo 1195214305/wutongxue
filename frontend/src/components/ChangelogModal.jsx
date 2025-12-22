@@ -2,8 +2,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.6.2',
+    date: '2025-12-23',
+    changes: [
+      { type: 'feature', text: '添加环境音效播放器（雨声、森林、海浪等）' },
+      { type: 'feature', text: '添加番茄钟专注计时器（25分钟专注+5分钟休息）' },
+      { type: 'feature', text: '添加设置面板（字体大小调节、快捷键查看）' },
+      { type: 'improve', text: '优化学习体验，支持自定义字体大小' },
+      { type: 'improve', text: '新增快捷键提示面板' }
+    ]
+  },
+  {
     version: 'v1.6.1',
     date: '2025-12-23',
+    highlighted: true,
+    highlightLabel: '里程碑版本',
     changes: [
       { type: 'feature', text: '迁移至 Turso 云端数据库，数据永久保存' },
       { type: 'fix', text: '修复服务重启后用户数据丢失的问题' },
@@ -151,14 +164,37 @@ function ChangelogModal({ isOpen, onClose }) {
 
                   {/* 版本标题 */}
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-warm-600 dark:bg-warm-500 flex items-center justify-center z-10">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
+                      release.highlighted
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg shadow-amber-200 dark:shadow-amber-900/30'
+                        : 'bg-warm-600 dark:bg-warm-500'
+                    }`}>
+                      {release.highlighted ? (
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-warm-800 dark:text-cream-100">{release.version}</h4>
-                      <p className="text-sm text-warm-500 dark:text-warm-400">{release.date}</p>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className={`font-semibold ${
+                            release.highlighted
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-warm-800 dark:text-cream-100'
+                          }`}>{release.version}</h4>
+                          {release.highlighted && (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-300 rounded-full">
+                              {release.highlightLabel}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-warm-500 dark:text-warm-400">{release.date}</p>
+                      </div>
                     </div>
                   </div>
 
