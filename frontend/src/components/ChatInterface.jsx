@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateScenario, continueChat, getSummary, generateQuiz } from '../services/api'
 
-function ChatInterface({ scenario, fileName, fileContent, model }) {
+function ChatInterface({ sessionId, scenario, fileName, fileContent, model, restoredMessages, onSaveSession }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -17,6 +17,7 @@ function ChatInterface({ scenario, fileName, fileContent, model }) {
   const [quizAnswers, setQuizAnswers] = useState({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const messagesEndRef = useRef(null)
+  const isRestoredRef = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -27,8 +28,23 @@ function ChatInterface({ scenario, fileName, fileContent, model }) {
   }, [messages, streamingText])
 
   useEffect(() => {
-    startLearning()
-  }, [])
+    // 如果有恢复的消息，直接使用
+    if (restoredMessages && !isRestoredRef.current) {
+      isRestoredRef.current = true
+      setMessages(restoredMessages.messages)
+      setApiMessages(restoredMessages.apiMessages)
+      setIsStarting(false)
+    } else if (!restoredMessages && !isRestoredRef.current) {
+      startLearning()
+    }
+  }, [restoredMessages])
+
+  // 保存会话到 localStorage
+  useEffect(() => {
+    if (sessionId && messages.length > 0 && apiMessages.length > 0 && !isStarting && onSaveSession) {
+      onSaveSession(sessionId, messages, apiMessages)
+    }
+  }, [messages, apiMessages, sessionId, isStarting])
 
   // 打字机效果
   const typeText = async (text, onUpdate) => {
@@ -51,10 +67,11 @@ function ChatInterface({ scenario, fileName, fileContent, model }) {
     try {
       const result = await generateScenario(fileContent, scenario, model)
 
-      setApiMessages([
+      const newApiMessages = [
         { role: 'system', content: result.systemPrompt },
         { role: 'assistant', content: result.response }
-      ])
+      ]
+      setApiMessages(newApiMessages)
 
       // 使用打字机效果显示
       setMessages([{ role: 'assistant', content: '' }])
@@ -77,25 +94,27 @@ function ChatInterface({ scenario, fileName, fileContent, model }) {
 
     const userMessage = inputValue.trim()
     setInputValue('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    const newMessages = [...messages, { role: 'user', content: userMessage }]
+    setMessages(newMessages)
     setIsLoading(true)
 
     try {
       const response = await continueChat(apiMessages, userMessage, model)
 
-      setApiMessages(prev => [
-        ...prev,
+      const newApiMessages = [
+        ...apiMessages,
         { role: 'user', content: userMessage },
         { role: 'assistant', content: response }
-      ])
+      ]
+      setApiMessages(newApiMessages)
 
       // 使用打字机效果
       setMessages(prev => [...prev, { role: 'assistant', content: '' }])
       await typeText(response, (text) => {
         setMessages(prev => {
-          const newMessages = [...prev]
-          newMessages[newMessages.length - 1] = { role: 'assistant', content: text }
-          return newMessages
+          const updatedMessages = [...prev]
+          updatedMessages[updatedMessages.length - 1] = { role: 'assistant', content: text }
+          return updatedMessages
         })
       })
     } catch (err) {
@@ -215,6 +234,11 @@ function ChatInterface({ scenario, fileName, fileContent, model }) {
             </svg>
             {scenarioNames[scenario]}
           </div>
+          {restoredMessages && (
+            <span className="text-xs px-2 py-1 bg-sage-100 dark:bg-sage-900/30 text-sage-600 dark:text-sage-400 rounded-full">
+              已恢复
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

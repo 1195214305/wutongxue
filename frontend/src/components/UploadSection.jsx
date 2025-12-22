@@ -2,11 +2,12 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { parseFile, getAllSupportedExtensions, getFileType, getFileTypeLabel } from '../utils/fileParser'
 
-function UploadSection({ onSuccess, history = [] }) {
+function UploadSection({ onSuccess, history = [], onRestoreHistory, onDeleteHistory }) {
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
   const [parseProgress, setParseProgress] = useState('')
+  const [historyExpanded, setHistoryExpanded] = useState(false) // 历史记录展开状态
   const fileInputRef = useRef(null)
 
   const supportedExtensions = getAllSupportedExtensions()
@@ -171,42 +172,145 @@ function UploadSection({ onSuccess, history = [] }) {
           animate={{ opacity: 1, y: 0 }}
           className="mt-8"
         >
-          <h3 className="text-lg font-medium text-warm-700 dark:text-cream-200 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            最近学习
-          </h3>
-          <div className="space-y-2">
-            {history.slice(0, 5).map((item, index) => (
-              <motion.div
-                key={item.id || index}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="p-3 bg-cream-50 dark:bg-warm-800 rounded-xl border border-cream-200 dark:border-warm-700 flex items-center justify-between"
+          <div
+            className="flex items-center justify-between mb-4 cursor-pointer"
+            onClick={() => setHistoryExpanded(!historyExpanded)}
+          >
+            <h3 className="text-lg font-medium text-warm-700 dark:text-cream-200 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              学习历史
+              <span className="text-sm text-warm-400 dark:text-warm-500 font-normal">
+                ({history.length}条记录)
+              </span>
+            </h3>
+            <button className="p-1 rounded-lg hover:bg-cream-100 dark:hover:bg-warm-700 transition-colors">
+              <svg
+                className={`w-5 h-5 text-warm-400 transition-transform duration-200 ${historyExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-warm-100 dark:bg-warm-700 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-warm-500 dark:text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-warm-700 dark:text-cream-200 font-medium text-sm truncate">
-                      {item.fileName}
-                    </p>
-                    <p className="text-warm-400 dark:text-warm-500 text-xs">
-                      {scenarioNames[item.scenario]} · {formatTime(item.timestamp)}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs px-2 py-1 bg-warm-100 dark:bg-warm-700 text-warm-500 dark:text-warm-400 rounded-full flex-shrink-0">
-                  {item.model === 'qwen-max' ? 'Max' : 'Turbo'}
-                </span>
-              </motion.div>
-            ))}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
           </div>
+
+          <AnimatePresence>
+            {historyExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                  {history.map((item, index) => (
+                    <motion.div
+                      key={item.id || index}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="p-3 bg-cream-50 dark:bg-warm-800 rounded-xl border border-cream-200 dark:border-warm-700 flex items-center justify-between hover:bg-cream-100 dark:hover:bg-warm-700 cursor-pointer transition-colors group"
+                      onClick={() => onRestoreHistory && onRestoreHistory(item)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-warm-100 dark:bg-warm-700 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 text-warm-500 dark:text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-warm-700 dark:text-cream-200 font-medium text-sm truncate">
+                            {item.fileName}
+                          </p>
+                          <p className="text-warm-400 dark:text-warm-500 text-xs">
+                            {scenarioNames[item.scenario]} · {formatTime(item.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 bg-warm-100 dark:bg-warm-700 text-warm-500 dark:text-warm-400 rounded-full flex-shrink-0">
+                          {item.model === 'qwen-max' ? 'Max' : 'Turbo'}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDeleteHistory && onDeleteHistory(item.id)
+                          }}
+                          className="w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-terracotta-100 dark:hover:bg-terracotta-900/30 text-warm-400 hover:text-terracotta-500 transition-all"
+                          title="删除记录"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 折叠时显示最近3条预览 */}
+          {!historyExpanded && (
+            <div className="space-y-2">
+              {history.slice(0, 3).map((item, index) => (
+                <motion.div
+                  key={item.id || index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-3 bg-cream-50 dark:bg-warm-800 rounded-xl border border-cream-200 dark:border-warm-700 flex items-center justify-between hover:bg-cream-100 dark:hover:bg-warm-700 cursor-pointer transition-colors group"
+                  onClick={() => onRestoreHistory && onRestoreHistory(item)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-warm-100 dark:bg-warm-700 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-warm-500 dark:text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-warm-700 dark:text-cream-200 font-medium text-sm truncate">
+                        {item.fileName}
+                      </p>
+                      <p className="text-warm-400 dark:text-warm-500 text-xs">
+                        {scenarioNames[item.scenario]} · {formatTime(item.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 bg-warm-100 dark:bg-warm-700 text-warm-500 dark:text-warm-400 rounded-full flex-shrink-0">
+                      {item.model === 'qwen-max' ? 'Max' : 'Turbo'}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDeleteHistory && onDeleteHistory(item.id)
+                      }}
+                      className="w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-terracotta-100 dark:hover:bg-terracotta-900/30 text-warm-400 hover:text-terracotta-500 transition-all"
+                      title="删除记录"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+              {history.length > 3 && (
+                <button
+                  onClick={() => setHistoryExpanded(true)}
+                  className="w-full py-2 text-sm text-warm-500 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-300 transition-colors"
+                >
+                  查看全部 {history.length} 条记录 ↓
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       )}
 

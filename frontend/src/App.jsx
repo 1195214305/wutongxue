@@ -10,7 +10,8 @@ import ChangelogModal from './components/ChangelogModal'
 // localStorage keys
 const STORAGE_KEYS = {
   DARK_MODE: 'wutongxue_dark_mode',
-  HISTORY: 'wutongxue_history'
+  HISTORY: 'wutongxue_history',
+  SESSIONS: 'wutongxue_sessions'
 }
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   const [fileContent, setFileContent] = useState('')
   const [scenario, setScenario] = useState(null)
   const [currentModel, setCurrentModel] = useState('qwen-turbo')
+  const [restoredMessages, setRestoredMessages] = useState(null) // 恢复的历史消息
 
   // 深色模式
   const [darkMode, setDarkMode] = useState(() => {
@@ -63,11 +65,44 @@ function App() {
     setSessionId(data.sessionId)
     setFileName(data.fileName)
     setFileContent(data.content)
+    setRestoredMessages(null) // 清除恢复的消息
     setStep(2)
   }
 
   const handleScenarioSelect = (selectedScenario) => {
     setScenario(selectedScenario)
+  }
+
+  // 保存会话数据
+  const saveSession = (id, messages, apiMessages) => {
+    try {
+      const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '{}')
+      sessions[id] = {
+        messages,
+        apiMessages,
+        updatedAt: Date.now()
+      }
+      // 只保留最近10个会话的数据
+      const sessionIds = Object.keys(sessions)
+      if (sessionIds.length > 10) {
+        const sortedIds = sessionIds.sort((a, b) => sessions[b].updatedAt - sessions[a].updatedAt)
+        sortedIds.slice(10).forEach(id => delete sessions[id])
+      }
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions))
+    } catch (err) {
+      console.error('保存会话失败:', err)
+    }
+  }
+
+  // 获取会话数据
+  const getSession = (id) => {
+    try {
+      const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '{}')
+      return sessions[id] || null
+    } catch (err) {
+      console.error('获取会话失败:', err)
+      return null
+    }
   }
 
   const handleStartLearning = () => {
@@ -81,9 +116,53 @@ function App() {
         model: currentModel,
         timestamp: Date.now()
       }
-      const updatedHistory = [newHistory, ...history.slice(0, 9)] // 最多保存10条
+      // 检查是否已存在相同ID的记录，如果存在则更新
+      const existingIndex = history.findIndex(h => h.id === sessionId)
+      let updatedHistory
+      if (existingIndex >= 0) {
+        updatedHistory = [...history]
+        updatedHistory[existingIndex] = newHistory
+        // 移到最前面
+        updatedHistory.unshift(updatedHistory.splice(existingIndex, 1)[0])
+      } else {
+        updatedHistory = [newHistory, ...history] // 不限制历史记录数量
+      }
       setHistory(updatedHistory)
       localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory))
+    }
+  }
+
+  // 恢复历史会话
+  const handleRestoreHistory = (historyItem) => {
+    const session = getSession(historyItem.id)
+    if (session && session.messages && session.messages.length > 0) {
+      setSessionId(historyItem.id)
+      setFileName(historyItem.fileName)
+      setScenario(historyItem.scenario)
+      setCurrentModel(historyItem.model)
+      setRestoredMessages({
+        messages: session.messages,
+        apiMessages: session.apiMessages
+      })
+      setStep(3)
+    } else {
+      // 如果没有保存的会话数据，提示用户
+      alert('该学习记录的对话内容已过期，请重新上传文件开始学习。')
+    }
+  }
+
+  // 删除历史记录
+  const handleDeleteHistory = (historyId) => {
+    const updatedHistory = history.filter(h => h.id !== historyId)
+    setHistory(updatedHistory)
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory))
+    // 同时删除会话数据
+    try {
+      const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '{}')
+      delete sessions[historyId]
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions))
+    } catch (err) {
+      console.error('删除会话失败:', err)
     }
   }
 
@@ -93,6 +172,7 @@ function App() {
     setFileName('')
     setFileContent('')
     setScenario(null)
+    setRestoredMessages(null)
   }
 
   const handleModelChange = (modelId) => {
@@ -161,7 +241,12 @@ function App() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <UploadSection onSuccess={handleUploadSuccess} history={history} />
+              <UploadSection
+                onSuccess={handleUploadSuccess}
+                history={history}
+                onRestoreHistory={handleRestoreHistory}
+                onDeleteHistory={handleDeleteHistory}
+              />
             </motion.div>
           )}
 
@@ -191,10 +276,13 @@ function App() {
               transition={{ duration: 0.3 }}
             >
               <ChatInterface
+                sessionId={sessionId}
                 scenario={scenario}
                 fileName={fileName}
                 fileContent={fileContent}
                 model={currentModel}
+                restoredMessages={restoredMessages}
+                onSaveSession={saveSession}
               />
             </motion.div>
           )}

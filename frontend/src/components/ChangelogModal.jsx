@@ -2,8 +2,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.4.0',
+    date: '2025-12-22',
+    changes: [
+      { type: 'feature', text: '学习历史记录支持点击恢复对话' },
+      { type: 'feature', text: '历史记录不限保留次数，支持折叠显示' },
+      { type: 'improve', text: '优化历史记录展示，默认显示3条，可展开查看全部' }
+    ]
+  },
+  {
     version: 'v1.3.0',
-    date: '2024-12-22',
+    date: '2025-12-22',
     changes: [
       { type: 'feature', text: '添加帮助中心和更新记录' },
       { type: 'feature', text: '添加学习历史记录功能' },
@@ -16,7 +25,7 @@ const CHANGELOG = [
   },
   {
     version: 'v1.2.0',
-    date: '2024-12-22',
+    date: '2025-12-21',
     changes: [
       { type: 'feature', text: '添加模型切换功能（Qwen Turbo/Max）' },
       { type: 'improve', text: '右上角显示当前模型，点击可切换' }
@@ -24,7 +33,7 @@ const CHANGELOG = [
   },
   {
     version: 'v1.1.0',
-    date: '2024-12-22',
+    date: '2025-12-21',
     changes: [
       { type: 'feature', text: '扩展文件格式支持' },
       { type: 'feature', text: '支持 PDF、Word、Excel 文件解析' },
@@ -34,7 +43,7 @@ const CHANGELOG = [
   },
   {
     version: 'v1.0.0',
-    date: '2024-12-22',
+    date: '2025-12-20',
     changes: [
       { type: 'feature', text: '项目初始化' },
       { type: 'feature', text: '实现文件上传功能' },
