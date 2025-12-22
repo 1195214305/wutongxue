@@ -8,7 +8,11 @@ const OpenAI = require('openai');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const WordExtractor = require('word-extractor');
 const db = require('./db');
+
+// Word .doc 文件解析器
+const wordExtractor = new WordExtractor();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,6 +21,58 @@ const JWT_SECRET = process.env.JWT_SECRET || 'wutongxue_secret_key_2025';
 // 中间件
 app.use(cors());
 app.use(express.json());
+
+// 健康检查路由（用于监控服务状态）
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: '无痛学后端服务运行正常',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// 配置临时文件上传（用于解析 .doc 文件）
+const tempUpload = multer({
+  dest: 'uploads/temp/',
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB 限制
+});
+
+// 解析 .doc 文件 API
+app.post('/api/parse-doc', tempUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '请上传文件' });
+    }
+
+    const filePath = req.file.path;
+
+    try {
+      const extracted = await wordExtractor.extract(filePath);
+      const text = extracted.getBody();
+
+      // 删除临时文件
+      fs.unlinkSync(filePath);
+
+      res.json({
+        success: true,
+        content: text
+      });
+    } catch (parseError) {
+      // 删除临时文件
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw new Error('无法解析此 .doc 文件，可能文件已损坏或格式不兼容');
+    }
+  } catch (error) {
+    console.error('解析 .doc 文件错误:', error);
+    res.status(500).json({ error: error.message || '解析文件失败' });
+  }
+});
 
 // 配置文件上传
 const storage = multer.diskStorage({

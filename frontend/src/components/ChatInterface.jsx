@@ -16,8 +16,69 @@ function ChatInterface({ sessionId, scenario, fileName, fileContent, model, rest
   const [quizData, setQuizData] = useState(null)
   const [quizAnswers, setQuizAnswers] = useState({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [speakingIndex, setSpeakingIndex] = useState(-1)
+  const [copiedIndex, setCopiedIndex] = useState(-1)
   const messagesEndRef = useRef(null)
   const isRestoredRef = useRef(false)
+
+  // 语音朗读功能
+  const handleSpeak = (text, index) => {
+    if ('speechSynthesis' in window) {
+      // 如果正在朗读同一条消息，则停止
+      if (isSpeaking && speakingIndex === index) {
+        window.speechSynthesis.cancel()
+        setIsSpeaking(false)
+        setSpeakingIndex(-1)
+        return
+      }
+
+      // 停止之前的朗读
+      window.speechSynthesis.cancel()
+
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'zh-CN'
+      utterance.rate = 1.0
+      utterance.pitch = 1.0
+
+      utterance.onstart = () => {
+        setIsSpeaking(true)
+        setSpeakingIndex(index)
+      }
+
+      utterance.onend = () => {
+        setIsSpeaking(false)
+        setSpeakingIndex(-1)
+      }
+
+      utterance.onerror = () => {
+        setIsSpeaking(false)
+        setSpeakingIndex(-1)
+      }
+
+      window.speechSynthesis.speak(utterance)
+    }
+  }
+
+  // 复制消息功能
+  const handleCopy = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIndex(index)
+      setTimeout(() => setCopiedIndex(-1), 2000)
+    } catch (err) {
+      console.error('复制失败:', err)
+    }
+  }
+
+  // 组件卸载时停止朗读
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -312,6 +373,58 @@ function ChatInterface({ sessionId, scenario, fileName, fileContent, model, rest
                         <span className="inline-block w-2 h-4 bg-warm-500 dark:bg-warm-400 animate-pulse ml-1" />
                       )}
                     </div>
+                    {/* 消息操作按钮 */}
+                    {message.content && !isStreaming && (
+                      <div className={`flex items-center gap-1 mt-2 pt-2 border-t ${
+                        message.role === 'user'
+                          ? 'border-warm-500/30'
+                          : 'border-cream-200 dark:border-warm-600'
+                      }`}>
+                        {/* 复制按钮 */}
+                        <button
+                          onClick={() => handleCopy(message.content, index)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            message.role === 'user'
+                              ? 'hover:bg-warm-500/30 text-cream-200'
+                              : 'hover:bg-cream-100 dark:hover:bg-warm-600 text-warm-400 dark:text-warm-500'
+                          }`}
+                          title={copiedIndex === index ? '已复制' : '复制'}
+                        >
+                          {copiedIndex === index ? (
+                            <svg className="w-4 h-4 text-sage-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </button>
+                        {/* 朗读按钮 - 仅助手消息 */}
+                        {message.role === 'assistant' && 'speechSynthesis' in window && (
+                          <button
+                            onClick={() => handleSpeak(message.content, index)}
+                            className={`p-1.5 rounded-lg transition-colors hover:bg-cream-100 dark:hover:bg-warm-600 ${
+                              speakingIndex === index
+                                ? 'text-warm-600 dark:text-warm-300'
+                                : 'text-warm-400 dark:text-warm-500'
+                            }`}
+                            title={speakingIndex === index ? '停止朗读' : '朗读'}
+                          >
+                            {speakingIndex === index ? (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}

@@ -6,6 +6,9 @@ import * as XLSX from 'xlsx'
 // 设置 PDF.js worker - 使用 unpkg CDN（更可靠）
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
+// 后端 API 地址
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
+
 // 支持的文件类型
 export const SUPPORTED_EXTENSIONS = {
   // 文本文件
@@ -126,6 +129,29 @@ const parseWordFile = async (file) => {
   }
 }
 
+// 解析旧版 Word 文档 (.doc) - 需要通过后端 API
+const parseDocFile = async (file) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch(`${API_BASE}/api/parse-doc`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error || '解析失败')
+    }
+
+    const data = await response.json()
+    return data.content
+  } catch (error) {
+    throw new Error('.doc 文件解析失败: ' + error.message)
+  }
+}
+
 // 解析 Excel 表格
 const parseExcelFile = async (file) => {
   try {
@@ -219,7 +245,7 @@ export const parseFile = async (file) => {
       } else if (ext === '.docx') {
         return await parseWordFile(file)
       } else if (ext === '.doc') {
-        throw new Error('暂不支持 .doc 格式，请转换为 .docx 格式')
+        return await parseDocFile(file)
       }
       break
 
