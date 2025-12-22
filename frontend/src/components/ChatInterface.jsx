@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateScenario, continueChat, getSummary } from '../services/api'
 
-function ChatInterface({ scenario, fileName, fileContent }) {
+function ChatInterface({ scenario, fileName, fileContent, model }) {
   const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -27,7 +27,7 @@ function ChatInterface({ scenario, fileName, fileContent }) {
   const startLearning = async () => {
     setIsStarting(true)
     try {
-      const result = await generateScenario(fileContent, scenario)
+      const result = await generateScenario(fileContent, scenario, model)
 
       // 保存API消息历史
       setApiMessages([
@@ -59,7 +59,7 @@ function ChatInterface({ scenario, fileName, fileContent }) {
     setIsLoading(true)
 
     try {
-      const response = await continueChat(apiMessages, userMessage)
+      const response = await continueChat(apiMessages, userMessage, model)
 
       // 更新API消息历史
       setApiMessages(prev => [
@@ -94,7 +94,7 @@ function ChatInterface({ scenario, fileName, fileContent }) {
     setShowSummary(true)
     setSummary('')
     try {
-      const result = await getSummary(apiMessages)
+      const result = await getSummary(apiMessages, model)
       setSummary(result)
     } catch (err) {
       console.error('获取摘要失败:', err)

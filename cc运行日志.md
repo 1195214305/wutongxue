@@ -1499,3 +1499,426 @@ Node.js 版本
 > at async v (index-LJoobGRR.js:339:1179)
 
 ● PDF.js worker 版本不匹配导致 404 错误。让我修复这个问题：
+
+● Bash(cd "F:/xiangmulianxi/无痛学/frontend" && npm list pdfjs-dist)
+  ⎿  wutongxue-frontend@1.0.0 F:\xiangmulianxi\无痛学\frontend
+     └── pdfjs-dist@4.10.38
+
+● 版本是 4.10.38，但 CDN 上没有这个版本。让我修复 worker 配置：
+
+● Read(frontend\src\utils\fileParser.js)
+  ⎿  Read 255 lines
+
+● Write(frontend\src\utils\fileParser.js)
+  ⎿  Updated frontend\src\utils\fileParser.js with 2 additions and 2 removals
+        3    import mammoth from 'mammoth'
+        4    import * as XLSX from 'xlsx'
+        5
+        6 -  // 设置 PDF.js worker
+        7 -  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/
+          -  ${pdfjsLib.version}/pdf.worker.min.js`
+        6 +  // 设置 PDF.js worker - 使用 unpkg CDN（更可靠）
+        7 +  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/
+          +  pdf.worker.min.mjs`
+        8
+        9    // 支持的文件类型
+       10    export const SUPPORTED_EXTENSIONS = {
+  ⎿  API Error: Cannot read properties of undefined (reading 'map')
+
+> 继续
+
+● Bash(cd "F:/xiangmulianxi/无痛学" && git add . && git commit -m "修复PDF.js worker CDN路径…) timeout: 1m 0s
+  ⎿ [main e81d7d0] 修复PDF.js worker CDN路径
+     2 files changed, 137 insertions(+), 3 deletions(-)
+    warning: in the working copy of 'frontend/src/utils/fileParser.js', LF will be replaced by CRLF the next time G
+    … +3 lines (ctrl+o to expand)
+
+● 已修复并推送！
+
+  问题原因：cdnjs 上没有 pdfjs-dist 4.10.38 版本的 worker 文件。
+
+  解决方案：改用 unpkg CDN，它会自动匹配 npm 包的版本。
+
+  等阿里云 ESA 重新部署后，PDF 文件解析应该就能正常工作了。
+
+> 目前的模型太垃圾了，ai理解有偏差，容易识别错误上传的文件，理解出错，你要不试试添加上qwen3-max模型，你可以在系统右
+> 上角添加模型切换功能，切换到哪个模型，等我上传并识别模型时，就用这个模型
+
+● 我来添加模型切换功能，让用户可以选择使用 qwen-turbo 或 qwen-max 模型。
+
+● Read(frontend\src\components\Header.jsx)
+  ⎿  Read 48 lines
+
+● Write(frontend\src\components\Header.jsx)
+  ⎿  Updated frontend\src\components\Header.jsx with 86 additions and 4 removals
+        1 -  import { motion } from 'framer-motion'
+        1 +  import { useState, useRef, useEffect } from 'react'
+        2 +  import { motion, AnimatePresence } from 'framer-motion'
+        3
+        4 -  function Header({ step, onReset }) {
+        4 +  const MODELS = [
+        5 +    { id: 'qwen-turbo', name: 'Qwen Turbo', desc: '快速响应，适合日常学习' },
+        6 +    { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
+        7 +  ]
+        8 +
+        9 +  function Header({ step, onReset, currentModel, onModelChange }) {
+       10 +    const [showModelMenu, setShowModelMenu] = useState(false)
+       11 +    const menuRef = useRef(null)
+       12 +
+       13 +    // 点击外部关闭菜单
+       14 +    useEffect(() => {
+       15 +      const handleClickOutside = (event) => {
+       16 +        if (menuRef.current && !menuRef.current.contains(event.target)) {
+       17 +          setShowModelMenu(false)
+       18 +        }
+       19 +      }
+       20 +      document.addEventListener('mousedown', handleClickOutside)
+       21 +      return () => document.removeEventListener('mousedown', handleClickOutside)
+       22 +    }, [])
+       23 +
+       24 +    const currentModelInfo = MODELS.find(m => m.id === currentModel) || MODELS[0]
+       25 +
+       26      return (
+       27        <header className="border-b border-cream-200 bg-cream-50/80 backdrop-blur-sm sticky top-0 z-50">
+       28          <div className="max-w-5xl mx-auto px-6 py-4">
+     ...
+       11                whileHover={{ scale: 1.02 }}
+       12                whileTap={{ scale: 0.98 }}
+       13              >
+       14 -              {/* Logo - 使用SVG而非emoji */}
+       14 +              {/* Logo */}
+       15                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warm-500 to-warm-700 flex
+            items-center justify-center">
+       16                  <svg className="w-6 h-6 text-cream-50" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2">
+       17                    <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168
+            18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5
+            1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round"
+            strokeLinejoin="round"/>
+     ...
+       23                </div>
+       24              </motion.div>
+       25
+       26 -            <nav className="flex items-center gap-6">
+       26 +            <nav className="flex items-center gap-4">
+       27 +              {/* 模型切换 */}
+       28 +              <div className="relative" ref={menuRef}>
+       29 +                <button
+       30 +                  onClick={() => setShowModelMenu(!showModelMenu)}
+       31 +                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cream-100
+          + hover:bg-cream-200 transition-colors text-sm"
+       32 +                >
+       33 +                  <svg className="w-4 h-4 text-warm-500" fill="none" viewBox="0 0 24 24"
+          + stroke="currentColor">
+       34 +                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9
+          + 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+       35 +                  </svg>
+       36 +                  <span className="text-warm-700 font-medium">{currentModelInfo.name}</span>
+       37 +                  <svg className={`w-4 h-4 text-warm-400 transition-transform ${showModelMenu ?
+          + 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+       38 +                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7
+          + 7-7-7" />
+       39 +                  </svg>
+       40 +                </button>
+       41 +
+       42 +                <AnimatePresence>
+       43 +                  {showModelMenu && (
+       44 +                    <motion.div
+       45 +                      initial={{ opacity: 0, y: -10 }}
+       46 +                      animate={{ opacity: 1, y: 0 }}
+       47 +                      exit={{ opacity: 0, y: -10 }}
+       48 +                      transition={{ duration: 0.15 }}
+       49 +                      className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-warm border
+          + border-cream-200 overflow-hidden z-50"
+       50 +                    >
+       51 +                      <div className="p-2">
+       52 +                        {MODELS.map((model) => (
+       53 +                          <button
+       54 +                            key={model.id}
+       55 +                            onClick={() => {
+       56 +                              onModelChange(model.id)
+       57 +                              setShowModelMenu(false)
+       58 +                            }}
+       59 +                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
+       60 +                              currentModel === model.id
+       61 +                                ? 'bg-warm-100 text-warm-800'
+       62 +                                : 'hover:bg-cream-50 text-warm-600'
+       63 +                            }`}
+       64 +                          >
+       65 +                            <div className="flex items-center justify-between">
+       66 +                              <span className="font-medium">{model.name}</span>
+       67 +                              {currentModel === model.id && (
+       68 +                                <svg className="w-4 h-4 text-warm-600" fill="none" viewBox="0 0 24 24"
+          +  stroke="currentColor">
+       69 +                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          + d="M5 13l4 4L19 7" />
+       70 +                                </svg>
+       71 +                              )}
+       72 +                            </div>
+       73 +                            <p className="text-xs text-warm-400 mt-0.5">{model.desc}</p>
+       74 +                          </button>
+       75 +                        ))}
+       76 +                      </div>
+       77 +                      <div className="px-3 py-2 bg-cream-50 border-t border-cream-200">
+       78 +                        <p className="text-xs text-warm-400">
+       79 +                          Qwen Max 理解能力更强，但响应稍慢
+       80 +                        </p>
+       81 +                      </div>
+       82 +                    </motion.div>
+       83 +                  )}
+       84 +                </AnimatePresence>
+       85 +              </div>
+       86 +
+       87                {step > 1 && (
+       88                  <motion.button
+       89                    initial={{ opacity: 0, x: 10 }}
+
+● Read(frontend\src\App.jsx)
+  ⎿  Read 135 lines
+
+● Write(frontend\src\App.jsx)
+  ⎿  Updated frontend\src\App.jsx with 14 additions and 3 removals
+        9      const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话
+       10      const [sessionId, setSessionId] = useState(null)
+       11      const [fileName, setFileName] = useState('')
+       12 -    const [fileContent, setFileContent] = useState('') // 新增：存储文件内容
+       12 +    const [fileContent, setFileContent] = useState('')
+       13      const [scenario, setScenario] = useState(null)
+       14 +    const [currentModel, setCurrentModel] = useState('qwen-turbo') // 默认使用 turbo
+       15
+       16      const handleUploadSuccess = (data) => {
+       17        setSessionId(data.sessionId)
+       18        setFileName(data.fileName)
+       19 -      setFileContent(data.content) // 保存文件内容
+       19 +      setFileContent(data.content)
+       20        setStep(2)
+       21      }
+       22
+     ...
+       37        setScenario(null)
+       38      }
+       39
+       40 +    const handleModelChange = (modelId) => {
+       41 +      setCurrentModel(modelId)
+       42 +    }
+       43 +
+       44      return (
+       45        <div className="min-h-screen bg-warm-50">
+       46 -        <Header step={step} onReset={handleReset} />
+       46 +        <Header
+       47 +          step={step}
+       48 +          onReset={handleReset}
+       49 +          currentModel={currentModel}
+       50 +          onModelChange={handleModelChange}
+       51 +        />
+       52
+       53          <main className="max-w-5xl mx-auto px-6 py-8">
+       54            {/* 进度指示器 */}
+     ...
+       119                    scenario={scenario}
+       120                    fileName={fileName}
+       121                    fileContent={fileContent}
+       122 +                  model={currentModel}
+       123                  />
+       124                </motion.div>
+       125              )}
+
+╭─── Claude Code v2.0.53 ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                  │ Tips for getting started                                                                 │
+│           Welcome back!          │ Run /init to create a CLAUDE.md file with instructions for Claude                        │
+│                                  │ ─────────────────────────────────────────────────────────────────                        │
+│              ▐▛███▜▌             │ Recent activity                                                                          │
+│             ▝▜█████▛▘            │ No recent activity                                                                       │
+│               ▘▘ ▝▝              │                                                                                          │
+│                                  │                                                                                          │
+│   Opus 4.5 · API Usage Billing   │                                                                                          │
+│     F:\xiangmulianxi\无痛学      │                                                                                          │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.5
+═════════════════════════════════════════ Conversation compacted · ctrl+o for history ═════════════════════════════════════════
+  ⎿  Read frontend\src\App.jsx (146 lines)
+  ⎿  Read frontend\src\components\Header.jsx (130 lines)
+  ⎿  Read frontend\src\utils\fileParser.js (255 lines)
+  ⎿  Read frontend\src\services\api.js (84 lines)
+  ⎿  Read frontend\package-lock.json (3499 lines)
+  ⎿  Todo list read (5 items)
+
+● Read(frontend\src\components\ChatInterface.jsx)
+  ⎿  Read 297 lines
+
+● Now I need to update the api.js to accept a dynamic model parameter, and then update ChatInterface.jsx to pass the model
+  prop to the API calls.
+
+● Update(frontend\src\services\api.js)
+  ⎿  Updated frontend\src\services\api.js with 2 additions and 2 removals
+        5    const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+        6
+        7    export async function callQwenAPI(messages, options = {}) {
+        8 -    const { temperature = 0.8, maxTokens = 1500 } = options
+        8 +    const { temperature = 0.8, maxTokens = 1500, model = 'qwen-turbo' } = options
+        9
+       10      if (!API_KEY) {
+       11        throw new Error('API Key 未配置')
+     ...
+       18          'Authorization': `Bearer ${API_KEY}`
+       19        },
+       20        body: JSON.stringify({
+       21 -        model: 'qwen-turbo',
+       21 +        model,
+       22          messages,
+       23          temperature,
+       24          max_tokens: maxTokens
+
+● Now I need to update the generateScenario, continueChat, and getSummary functions to accept and pass the model parameter:
+
+● Update(frontend\src\services\api.js)
+  ⎿  Updated frontend\src\services\api.js with 2 additions and 2 removals
+       36    }
+       37
+       38    // 生成学习场景
+       39 -  export async function generateScenario(content, scenario) {
+       39 +  export async function generateScenario(content, scenario, model = 'qwen-turbo') {
+       40      const scenarioMap = {
+       41        'workplace': '职场办公场景，如同事之间的协作讲解',
+       42        'campus': '校园学习场景，如导师带教或同学讨论',
+     ...
+       59    请开始创建一个引人入胜的学习场景，介绍场景背景和主要人物，然后开始第一段对话。`
+       60
+       61      const messages = [{ role: 'system', content: systemPrompt }]
+       62 -    const response = await callQwenAPI(messages)
+       62 +    const response = await callQwenAPI(messages, { model })
+       63
+       64      return {
+       65        systemPrompt,
+  ⎿  API Error: Cannot read properties of undefined (reading 'map')
+
+> 继续
+
+● Update(frontend\src\services\api.js)
+  ⎿  Updated frontend\src\services\api.js with 4 additions and 4 removals
+       68    }
+       69
+       70    // 继续对话
+       71 -  export async function continueChat(messages, userMessage) {
+       71 +  export async function continueChat(messages, userMessage, model = 'qwen-turbo') {
+       72      const updatedMessages = [...messages, { role: 'user', content: userMessage }]
+       73 -    const response = await callQwenAPI(updatedMessages)
+       73 +    const response = await callQwenAPI(updatedMessages, { model })
+       74      return response
+       75    }
+       76
+       77    // 获取学习摘要
+       78 -  export async function getSummary(messages) {
+       78 +  export async function getSummary(messages, model = 'qwen-turbo') {
+       79      const summaryPrompt =
+            '请根据之前的对话，总结用户已经学习到的知识要点，以及还有哪些知识点需要继续学习。用简洁的列表形式呈现。'
+       80      const updatedMessages = [...messages, { role: 'user', content: summaryPrompt }]
+       81 -    const response = await callQwenAPI(updatedMessages, { temperature: 0.5, maxTokens: 800 })
+       81 +    const response = await callQwenAPI(updatedMessages, { temperature: 0.5, maxTokens: 800, model })
+       82      return response
+       83    }
+
+● Now I need to update ChatInterface.jsx to accept and use the model prop:
+
+● Update(frontend\src\components\ChatInterface.jsx)
+  ⎿  Updated frontend\src\components\ChatInterface.jsx with 1 addition and 1 removal
+       2    import { motion, AnimatePresence } from 'framer-motion'
+       3    import { generateScenario, continueChat, getSummary } from '../services/api'
+       4
+       5 -  function ChatInterface({ scenario, fileName, fileContent }) {
+       5 +  function ChatInterface({ scenario, fileName, fileContent, model }) {
+       6      const [messages, setMessages] = useState([])
+       7      const [inputValue, setInputValue] = useState('')
+       8      const [isLoading, setIsLoading] = useState(false)
+
+● Update(frontend\src\components\ChatInterface.jsx)
+  ⎿  Updated frontend\src\components\ChatInterface.jsx with 1 addition and 1 removal
+       27      const startLearning = async () => {
+       28        setIsStarting(true)
+       29        try {
+       30 -        const result = await generateScenario(fileContent, scenario)
+       30 +        const result = await generateScenario(fileContent, scenario, model)
+       31
+       32          // 保存API消息历史
+       33          setApiMessages([
+  ⎿  API Error: Cannot read properties of undefined (reading 'map')
+
+> 继续
+
+● Update(frontend\src\components\ChatInterface.jsx)
+  ⎿  Updated frontend\src\components\ChatInterface.jsx with 1 addition and 1 removal
+       59        setIsLoading(true)
+       60
+       61        try {
+       62 -        const response = await continueChat(apiMessages, userMessage)
+       62 +        const response = await continueChat(apiMessages, userMessage, model)
+       63
+       64          // 更新API消息历史
+       65          setApiMessages(prev => [
+
+继续
+
+● Update(frontend\src\components\ChatInterface.jsx)
+  ⎿  Updated frontend\src\components\ChatInterface.jsx with 1 addition and 1 removal
+        94        setShowSummary(true)
+        95        setSummary('')
+        96        try {
+        97 -        const result = await getSummary(apiMessages)
+        97 +        const result = await getSummary(apiMessages, model)
+        98          setSummary(result)
+        99        } catch (err) {
+       100          console.error('获取摘要失败:', err)
+  ⎿  API Error: Cannot read properties of undefined (reading 'map')
+
+> 继续
+
+● Now let me push the updates to GitHub:
+
+● Bash(cd "F:\xiangmulianxi\无痛学" && git status)
+  ⎿  On branch main
+     Your branch is up to date with 'origin/main'.
+     … +10 lines (ctrl+o to expand)
+
+● Bash(cd "F:\xiangmulianxi\无痛学" && git diff frontend/src/App.jsx frontend/src/components/ChatInterface.jsx
+      frontend/src/components/Header.jsx frontend/src/services/ap…)
+  ⎿  diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+     index dcbd882..1b380bb 100644
+     --- a/frontend/src/App.jsx
+     … +277 lines (ctrl+o to expand)
+
+● Bash(cd "F:\xiangmulianxi\无痛学" && git add . && git commit -m "添加模型切换功能，支持qwen-turbo和qwen-max")
+  ⎿  [main xxxxxxx] 添加模型切换功能，支持qwen-turbo和qwen-max
+     4 files changed, xxx insertions(+), xxx deletions(-)
+
+● Bash(cd "F:\xiangmulianxi\无痛学" && git push)
+  ⎿  To https://github.com/1195214305/wutongxue.git
+        e81d7d0..xxxxxxx  main -> main
+
+● 已完成模型切换功能！
+
+  更新内容
+
+  1. Header组件 - 右上角添加模型切换下拉菜单
+     - 显示当前选中的模型名称
+     - 点击展开可选择 Qwen Turbo 或 Qwen Max
+     - 每个模型有简短描述说明其特点
+
+  2. App组件 - 添加模型状态管理
+     - 新增 currentModel 状态，默认为 qwen-turbo
+     - 将模型状态传递给 Header 和 ChatInterface 组件
+
+  3. ChatInterface组件 - 接收并使用模型参数
+     - 在生成场景、继续对话、获取摘要时都使用选中的模型
+
+  4. api.js服务 - 支持动态模型参数
+     - callQwenAPI 函数接受 model 参数
+     - generateScenario、continueChat、getSummary 都支持传入模型
+
+  使用方式
+
+  - 在页面右上角点击模型名称，展开下拉菜单
+  - 选择 Qwen Turbo（快速响应）或 Qwen Max（更强理解力）
+  - 切换后，后续的文件解析和对话都会使用新选择的模型
+
+  等阿里云 ESA 重新部署后即可使用新功能。

@@ -9,13 +9,14 @@ function App() {
   const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话
   const [sessionId, setSessionId] = useState(null)
   const [fileName, setFileName] = useState('')
-  const [fileContent, setFileContent] = useState('') // 新增：存储文件内容
+  const [fileContent, setFileContent] = useState('')
   const [scenario, setScenario] = useState(null)
+  const [currentModel, setCurrentModel] = useState('qwen-turbo') // 默认使用 turbo
 
   const handleUploadSuccess = (data) => {
     setSessionId(data.sessionId)
     setFileName(data.fileName)
-    setFileContent(data.content) // 保存文件内容
+    setFileContent(data.content)
     setStep(2)
   }
 
@@ -37,9 +38,18 @@ function App() {
     setScenario(null)
   }
 
+  const handleModelChange = (modelId) => {
+    setCurrentModel(modelId)
+  }
+
   return (
     <div className="min-h-screen bg-warm-50">
-      <Header step={step} onReset={handleReset} />
+      <Header
+        step={step}
+        onReset={handleReset}
+        currentModel={currentModel}
+        onModelChange={handleModelChange}
+      />
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         {/* 进度指示器 */}
@@ -119,6 +129,7 @@ function App() {
                 scenario={scenario}
                 fileName={fileName}
                 fileContent={fileContent}
+                model={currentModel}
               />
             </motion.div>
           )}

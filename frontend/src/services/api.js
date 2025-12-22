@@ -5,7 +5,7 @@ const API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY || 'sk-54ae495d0e8e4dfb92
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
 
 export async function callQwenAPI(messages, options = {}) {
-  const { temperature = 0.8, maxTokens = 1500 } = options
+  const { temperature = 0.8, maxTokens = 1500, model = 'qwen-turbo' } = options
 
   if (!API_KEY) {
     throw new Error('API Key 未配置')
@@ -18,7 +18,7 @@ export async function callQwenAPI(messages, options = {}) {
       'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'qwen-turbo',
+      model,
       messages,
       temperature,
       max_tokens: maxTokens
@@ -36,7 +36,7 @@ export async function callQwenAPI(messages, options = {}) {
 }
 
 // 生成学习场景
-export async function generateScenario(content, scenario) {
+export async function generateScenario(content, scenario, model = 'qwen-turbo') {
   const scenarioMap = {
     'workplace': '职场办公场景，如同事之间的协作讲解',
     'campus': '校园学习场景，如导师带教或同学讨论',
@@ -59,7 +59,7 @@ ${content}
 请开始创建一个引人入胜的学习场景，介绍场景背景和主要人物，然后开始第一段对话。`
 
   const messages = [{ role: 'system', content: systemPrompt }]
-  const response = await callQwenAPI(messages)
+  const response = await callQwenAPI(messages, { model })
 
   return {
     systemPrompt,
@@ -68,16 +68,16 @@ ${content}
 }
 
 // 继续对话
-export async function continueChat(messages, userMessage) {
+export async function continueChat(messages, userMessage, model = 'qwen-turbo') {
   const updatedMessages = [...messages, { role: 'user', content: userMessage }]
-  const response = await callQwenAPI(updatedMessages)
+  const response = await callQwenAPI(updatedMessages, { model })
   return response
 }
 
 // 获取学习摘要
-export async function getSummary(messages) {
+export async function getSummary(messages, model = 'qwen-turbo') {
   const summaryPrompt = '请根据之前的对话，总结用户已经学习到的知识要点，以及还有哪些知识点需要继续学习。用简洁的列表形式呈现。'
   const updatedMessages = [...messages, { role: 'user', content: summaryPrompt }]
-  const response = await callQwenAPI(updatedMessages, { temperature: 0.5, maxTokens: 800 })
+  const response = await callQwenAPI(updatedMessages, { temperature: 0.5, maxTokens: 800, model })
   return response
 }
