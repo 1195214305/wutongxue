@@ -2,6 +2,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.5.0',
+    date: '2025-12-22',
+    changes: [
+      { type: 'feature', text: '添加用户登录注册系统，支持多设备同步' },
+      { type: 'feature', text: '添加新用户引导教程' },
+      { type: 'feature', text: '添加 GitHub 项目链接' },
+      { type: 'improve', text: '学习历史记录云端存储，永不丢失' },
+      { type: 'improve', text: '优化历史记录恢复功能' }
+    ]
+  },
+  {
     version: 'v1.4.0',
     date: '2025-12-22',
     changes: [

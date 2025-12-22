@@ -1,20 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
 const MODELS = [
   { id: 'qwen-turbo', name: 'Qwen Turbo', desc: '快速响应，适合日常学习' },
   { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
 ]
 
-function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog }) {
+function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth }) {
   const [showModelMenu, setShowModelMenu] = useState(false)
-  const menuRef = useRef(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const modelMenuRef = useRef(null)
+  const userMenuRef = useRef(null)
+
+  const { user, isAuthenticated, logout } = useAuth()
 
   // 点击外部关闭菜单
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (modelMenuRef.current && !modelMenuRef.current.contains(event.target)) {
         setShowModelMenu(false)
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -70,6 +78,7 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
 
             {/* 深色模式切换 */}
             <button
+              id="dark-mode-toggle"
               onClick={onDarkModeToggle}
               className="p-2 rounded-lg hover:bg-cream-100 dark:hover:bg-warm-800 transition-colors"
               title={darkMode ? '切换到浅色模式' : '切换到深色模式'}
@@ -86,7 +95,7 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
             </button>
 
             {/* 模型切换 */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative" ref={modelMenuRef} id="model-switcher">
               <button
                 onClick={() => setShowModelMenu(!showModelMenu)}
                 className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg bg-cream-100 dark:bg-warm-800 hover:bg-cream-200 dark:hover:bg-warm-700 transition-colors text-sm"
@@ -144,6 +153,75 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* 用户菜单 */}
+            <div className="relative" ref={userMenuRef} id="user-menu">
+              {isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg bg-sage-100 dark:bg-sage-900/30 hover:bg-sage-200 dark:hover:bg-sage-900/50 transition-colors"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-sage-500 dark:bg-sage-600 flex items-center justify-center">
+                      <span className="text-xs text-white font-medium">
+                        {(user?.nickname || user?.username || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="text-sm text-sage-700 dark:text-sage-300 font-medium hidden sm:inline max-w-[80px] truncate">
+                      {user?.nickname || user?.username}
+                    </span>
+                    <svg className={`w-4 h-4 text-sage-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-48 bg-white dark:bg-warm-800 rounded-xl shadow-warm border border-cream-200 dark:border-warm-700 overflow-hidden z-50"
+                      >
+                        <div className="p-3 border-b border-cream-200 dark:border-warm-700">
+                          <p className="text-sm font-medium text-warm-800 dark:text-cream-100 truncate">
+                            {user?.nickname || user?.username}
+                          </p>
+                          <p className="text-xs text-warm-400 dark:text-warm-500 mt-0.5">
+                            已登录
+                          </p>
+                        </div>
+                        <div className="p-2">
+                          <button
+                            onClick={() => {
+                              logout()
+                              setShowUserMenu(false)
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-cream-50 dark:hover:bg-warm-700/50 text-warm-600 dark:text-warm-300 text-sm flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            退出登录
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <button
+                  onClick={() => onShowAuth && onShowAuth('login')}
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg bg-warm-700 hover:bg-warm-800 dark:bg-warm-600 dark:hover:bg-warm-500 transition-colors text-sm"
+                >
+                  <svg className="w-4 h-4 text-cream-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-cream-50 font-medium hidden sm:inline">登录</span>
+                </button>
+              )}
             </div>
 
             {step > 1 && (

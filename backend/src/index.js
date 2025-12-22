@@ -5,9 +5,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'wutongxue_secret_key_2025';
 
 // 中间件
 app.use(cors());
@@ -43,8 +48,254 @@ const openai = new OpenAI({
   baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 });
 
-// 存储会话数据
-const sessions = new Map();
+// JWT 验证中间件
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: '未登录' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: '登录已过期，请重新登录' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// 可选的认证中间件（允许未登录用户）
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (!err) {
+        req.user = user;
+      }
+    });
+  }
+  next();
+};
+
+// ==================== 用户认证接口 ====================
+
+// 注册
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, nickname } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ error: '用户名长度需要在3-20个字符之间' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: '密码长度至少6个字符' });
+    }
+
+    // 检查用户名是否已存在
+    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (existingUser) {
+      return res.status(400).json({ error: '用户名已存在' });
+    }
+
+    // 加密密码
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = uuidv4();
+
+    // 创建用户
+    db.prepare('INSERT INTO users (id, username, password, nickname) VALUES (?, ?, ?, ?)').run(
+      userId,
+      username,
+      hashedPassword,
+      nickname || username
+    );
+
+    // 生成 token
+    const token = jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      message: '注册成功',
+      token,
+      user: {
+        id: userId,
+        username,
+        nickname: nickname || username
+      }
+    });
+  } catch (error) {
+    console.error('注册错误:', error);
+    res.status(500).json({ error: '注册失败，请稍后重试' });
+  }
+});
+
+// 登录
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: '用户名和密码不能为空' });
+    }
+
+    // 查找用户
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+    if (!user) {
+      return res.status(400).json({ error: '用户名或密码错误' });
+    }
+
+    // 验证密码
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: '用户名或密码错误' });
+    }
+
+    // 生成 token
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      message: '登录成功',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname
+      }
+    });
+  } catch (error) {
+    console.error('登录错误:', error);
+    res.status(500).json({ error: '登录失败，请稍后重试' });
+  }
+});
+
+// 获取当前用户信息
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+  try {
+    const user = db.prepare('SELECT id, username, nickname, created_at FROM users WHERE id = ?').get(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('获取用户信息错误:', error);
+    res.status(500).json({ error: '获取用户信息失败' });
+  }
+});
+
+// ==================== 学习历史接口 ====================
+
+// 获取用户的学习历史
+app.get('/api/history', authenticateToken, (req, res) => {
+  try {
+    const sessions = db.prepare(`
+      SELECT id, file_name, scenario, model, created_at, updated_at
+      FROM sessions
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+    `).all(req.user.id);
+
+    res.json({ success: true, history: sessions });
+  } catch (error) {
+    console.error('获取历史记录错误:', error);
+    res.status(500).json({ error: '获取历史记录失败' });
+  }
+});
+
+// 获取会话详情（包含消息）
+app.get('/api/session/:sessionId', authenticateToken, (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = db.prepare(`
+      SELECT * FROM sessions WHERE id = ? AND user_id = ?
+    `).get(sessionId, req.user.id);
+
+    if (!session) {
+      return res.status(404).json({ error: '会话不存在' });
+    }
+
+    const messages = db.prepare(`
+      SELECT role, content, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC
+    `).all(sessionId);
+
+    res.json({
+      success: true,
+      session: {
+        ...session,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('获取会话详情错误:', error);
+    res.status(500).json({ error: '获取会话详情失败' });
+  }
+});
+
+// 删除历史记录
+app.delete('/api/history/:sessionId', authenticateToken, (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    // 验证会话属于当前用户
+    const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND user_id = ?').get(sessionId, req.user.id);
+    if (!session) {
+      return res.status(404).json({ error: '会话不存在' });
+    }
+
+    // 删除消息和会话
+    db.prepare('DELETE FROM messages WHERE session_id = ?').run(sessionId);
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+
+    res.json({ success: true, message: '删除成功' });
+  } catch (error) {
+    console.error('删除历史记录错误:', error);
+    res.status(500).json({ error: '删除失败' });
+  }
+});
+
+// ==================== 原有接口（改造支持用户系统） ====================
+
+// 存储会话数据（内存缓存，用于未登录用户）
+const memorySessions = new Map();
+
+// 创建新会话
+app.post('/api/session/create', optionalAuth, async (req, res) => {
+  try {
+    const { fileName, fileContent, scenario, model } = req.body;
+    const sessionId = uuidv4();
+
+    if (req.user) {
+      // 已登录用户，保存到数据库
+      db.prepare(`
+        INSERT INTO sessions (id, user_id, file_name, file_content, scenario, model)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(sessionId, req.user.id, fileName, fileContent, scenario, model || 'qwen-turbo');
+    } else {
+      // 未登录用户，保存到内存
+      memorySessions.set(sessionId, {
+        fileName,
+        fileContent,
+        scenario,
+        model: model || 'qwen-turbo',
+        messages: []
+      });
+    }
+
+    res.json({ success: true, sessionId });
+  } catch (error) {
+    console.error('创建会话错误:', error);
+    res.status(500).json({ error: '创建会话失败' });
+  }
+});
 
 // 上传知识文件
 app.post('/api/upload', upload.single('file'), async (req, res) => {
@@ -67,7 +318,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // 创建会话ID
     const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
 
-    sessions.set(sessionId, {
+    memorySessions.set(sessionId, {
       content,
       fileName: req.file.originalname,
       messages: [],
@@ -91,11 +342,11 @@ app.post('/api/scenario', async (req, res) => {
   try {
     const { sessionId, scenario } = req.body;
 
-    if (!sessions.has(sessionId)) {
+    if (!memorySessions.has(sessionId)) {
       return res.status(404).json({ error: '会话不存在' });
     }
 
-    const session = sessions.get(sessionId);
+    const session = memorySessions.get(sessionId);
     session.scenario = scenario;
 
     res.json({ success: true, message: '场景设置成功' });
@@ -105,23 +356,18 @@ app.post('/api/scenario', async (req, res) => {
   }
 });
 
-// 开始学习对话
-app.post('/api/start', async (req, res) => {
+// 开始学习对话（支持流式输出）
+app.post('/api/start', optionalAuth, async (req, res) => {
   try {
-    const { sessionId } = req.body;
+    const { sessionId, content, scenario, model, stream } = req.body;
 
-    if (!sessions.has(sessionId)) {
-      return res.status(404).json({ error: '会话不存在' });
-    }
-
-    const session = sessions.get(sessionId);
     const scenarioMap = {
       'workplace': '职场办公场景，如同事之间的协作讲解',
       'campus': '校园学习场景，如导师带教或同学讨论',
       'practice': '实操场景，如现场问题解决'
     };
 
-    const systemPrompt = `你是一个情景式学习助手。请基于以下知识内容，构建一个${scenarioMap[session.scenario] || '自然的学习场景'}。
+    const systemPrompt = `你是一个情景式学习助手。请基于以下知识内容，构建一个${scenarioMap[scenario] || '自然的学习场景'}。
 
 要求：
 1. 以自然的人物对话推进情节
@@ -132,62 +378,143 @@ app.post('/api/start', async (req, res) => {
 6. 使用生动的场景描述和人物对话
 
 知识内容：
-${session.content}
+${content}
 
 请开始创建一个引人入胜的学习场景，介绍场景背景和主要人物，然后开始第一段对话。`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'qwen-turbo',
-      messages: [
-        { role: 'system', content: systemPrompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 1500
-    });
+    const useModel = model || 'qwen-turbo';
 
-    const assistantMessage = completion.choices[0].message.content;
+    if (stream) {
+      // 流式输出
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
-    session.messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'assistant', content: assistantMessage }
-    ];
+      const completion = await openai.chat.completions.create({
+        model: useModel,
+        messages: [{ role: 'system', content: systemPrompt }],
+        temperature: 0.8,
+        max_tokens: 1500,
+        stream: true
+      });
 
-    res.json({
-      success: true,
-      message: assistantMessage
-    });
+      let fullContent = '';
+
+      for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullContent += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // 保存消息到数据库（如果用户已登录）
+      if (req.user && sessionId) {
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'system', systemPrompt);
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', fullContent);
+      }
+
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    } else {
+      // 非流式输出
+      const completion = await openai.chat.completions.create({
+        model: useModel,
+        messages: [{ role: 'system', content: systemPrompt }],
+        temperature: 0.8,
+        max_tokens: 1500
+      });
+
+      const assistantMessage = completion.choices[0].message.content;
+
+      // 保存消息到数据库（如果用户已登录）
+      if (req.user && sessionId) {
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'system', systemPrompt);
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', assistantMessage);
+      }
+
+      res.json({
+        success: true,
+        message: assistantMessage
+      });
+    }
   } catch (error) {
     console.error('开始学习错误:', error);
     res.status(500).json({ error: '开始学习失败: ' + error.message });
   }
 });
 
-// 继续对话
-app.post('/api/chat', async (req, res) => {
+// 继续对话（支持流式输出）
+app.post('/api/chat', optionalAuth, async (req, res) => {
   try {
-    const { sessionId, message } = req.body;
+    const { sessionId, message, messages: clientMessages, model, stream } = req.body;
 
-    if (!sessions.has(sessionId)) {
-      return res.status(404).json({ error: '会话不存在' });
+    let apiMessages = [];
+    const useModel = model || 'qwen-turbo';
+
+    // 使用客户端传来的消息历史
+    if (clientMessages && clientMessages.length > 0) {
+      apiMessages = clientMessages;
     }
 
-    const session = sessions.get(sessionId);
-    session.messages.push({ role: 'user', content: message });
+    apiMessages.push({ role: 'user', content: message });
 
-    const completion = await openai.chat.completions.create({
-      model: 'qwen-turbo',
-      messages: session.messages,
-      temperature: 0.8,
-      max_tokens: 1500
-    });
+    if (stream) {
+      // 流式输出
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
-    const assistantMessage = completion.choices[0].message.content;
-    session.messages.push({ role: 'assistant', content: assistantMessage });
+      const completion = await openai.chat.completions.create({
+        model: useModel,
+        messages: apiMessages,
+        temperature: 0.8,
+        max_tokens: 1500,
+        stream: true
+      });
 
-    res.json({
-      success: true,
-      message: assistantMessage
-    });
+      let fullContent = '';
+
+      for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullContent += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // 保存消息到数据库（如果用户已登录）
+      if (req.user && sessionId) {
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'user', message);
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', fullContent);
+        db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), sessionId);
+      }
+
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    } else {
+      // 非流式输出
+      const completion = await openai.chat.completions.create({
+        model: useModel,
+        messages: apiMessages,
+        temperature: 0.8,
+        max_tokens: 1500
+      });
+
+      const assistantMessage = completion.choices[0].message.content;
+
+      // 保存消息到数据库（如果用户已登录）
+      if (req.user && sessionId) {
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'user', message);
+        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', assistantMessage);
+        db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), sessionId);
+      }
+
+      res.json({
+        success: true,
+        message: assistantMessage
+      });
+    }
   } catch (error) {
     console.error('对话错误:', error);
     res.status(500).json({ error: '对话失败: ' + error.message });
@@ -199,11 +526,11 @@ app.get('/api/summary/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    if (!sessions.has(sessionId)) {
+    if (!memorySessions.has(sessionId)) {
       return res.status(404).json({ error: '会话不存在' });
     }
 
-    const session = sessions.get(sessionId);
+    const session = memorySessions.get(sessionId);
 
     const summaryPrompt = `请根据之前的对话，总结用户已经学习到的知识要点，以及还有哪些知识点需要继续学习。用简洁的列表形式呈现。`;
 
