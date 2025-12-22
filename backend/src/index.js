@@ -157,7 +157,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // 检查用户名是否已存在
-    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    const existingUser = await db.get('SELECT id FROM users WHERE username = ?', [username]);
     if (existingUser) {
       return res.status(400).json({ error: '用户名已存在' });
     }
@@ -167,11 +167,9 @@ app.post('/api/auth/register', async (req, res) => {
     const userId = uuidv4();
 
     // 创建用户
-    db.prepare('INSERT INTO users (id, username, password, nickname) VALUES (?, ?, ?, ?)').run(
-      userId,
-      username,
-      hashedPassword,
-      nickname || username
+    await db.run(
+      'INSERT INTO users (id, username, password, nickname) VALUES (?, ?, ?, ?)',
+      [userId, username, hashedPassword, nickname || username]
     );
 
     // 生成 token
@@ -203,7 +201,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // 查找用户
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+    const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
     if (!user) {
       return res.status(400).json({ error: '用户名或密码错误' });
     }
@@ -234,9 +232,9 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // 获取当前用户信息
-app.get('/api/auth/me', authenticateToken, (req, res) => {
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
-    const user = db.prepare('SELECT id, username, nickname, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = await db.get('SELECT id, username, nickname, created_at FROM users WHERE id = ?', [req.user.id]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -250,14 +248,15 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 // ==================== 学习历史接口 ====================
 
 // 获取用户的学习历史
-app.get('/api/history', authenticateToken, (req, res) => {
+app.get('/api/history', authenticateToken, async (req, res) => {
   try {
-    const sessions = db.prepare(`
-      SELECT id, file_name, scenario, model, created_at, updated_at
-      FROM sessions
-      WHERE user_id = ?
-      ORDER BY updated_at DESC
-    `).all(req.user.id);
+    const sessions = await db.all(
+      `SELECT id, file_name, scenario, model, created_at, updated_at
+       FROM sessions
+       WHERE user_id = ?
+       ORDER BY updated_at DESC`,
+      [req.user.id]
+    );
 
     res.json({ success: true, history: sessions });
   } catch (error) {
@@ -267,21 +266,23 @@ app.get('/api/history', authenticateToken, (req, res) => {
 });
 
 // 获取会话详情（包含消息）
-app.get('/api/session/:sessionId', authenticateToken, (req, res) => {
+app.get('/api/session/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    const session = db.prepare(`
-      SELECT * FROM sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, req.user.id);
+    const session = await db.get(
+      'SELECT * FROM sessions WHERE id = ? AND user_id = ?',
+      [sessionId, req.user.id]
+    );
 
     if (!session) {
       return res.status(404).json({ error: '会话不存在' });
     }
 
-    const messages = db.prepare(`
-      SELECT role, content, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC
-    `).all(sessionId);
+    const messages = await db.all(
+      'SELECT role, content, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC',
+      [sessionId]
+    );
 
     res.json({
       success: true,
@@ -297,19 +298,19 @@ app.get('/api/session/:sessionId', authenticateToken, (req, res) => {
 });
 
 // 删除历史记录
-app.delete('/api/history/:sessionId', authenticateToken, (req, res) => {
+app.delete('/api/history/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
     // 验证会话属于当前用户
-    const session = db.prepare('SELECT id FROM sessions WHERE id = ? AND user_id = ?').get(sessionId, req.user.id);
+    const session = await db.get('SELECT id FROM sessions WHERE id = ? AND user_id = ?', [sessionId, req.user.id]);
     if (!session) {
       return res.status(404).json({ error: '会话不存在' });
     }
 
     // 删除消息和会话
-    db.prepare('DELETE FROM messages WHERE session_id = ?').run(sessionId);
-    db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+    await db.run('DELETE FROM messages WHERE session_id = ?', [sessionId]);
+    await db.run('DELETE FROM sessions WHERE id = ?', [sessionId]);
 
     res.json({ success: true, message: '删除成功' });
   } catch (error) {
@@ -331,10 +332,11 @@ app.post('/api/session/create', optionalAuth, async (req, res) => {
 
     if (req.user) {
       // 已登录用户，保存到数据库
-      db.prepare(`
-        INSERT INTO sessions (id, user_id, file_name, file_content, scenario, model)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(sessionId, req.user.id, fileName, fileContent, scenario, model || 'qwen-turbo');
+      await db.run(
+        `INSERT INTO sessions (id, user_id, file_name, file_content, scenario, model)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [sessionId, req.user.id, fileName, fileContent, scenario, model || 'qwen-turbo']
+      );
     } else {
       // 未登录用户，保存到内存
       memorySessions.set(sessionId, {
@@ -367,7 +369,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     if (req.file.originalname.endsWith('.txt') || req.file.originalname.endsWith('.md')) {
       content = fs.readFileSync(filePath, 'utf-8');
     } else {
-      // 对于其他格式，暂时返回提示
       content = fs.readFileSync(filePath, 'utf-8');
     }
 
@@ -466,8 +467,8 @@ ${content}
 
       // 保存消息到数据库（如果用户已登录）
       if (req.user && sessionId) {
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'system', systemPrompt);
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', fullContent);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'system', systemPrompt]);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'assistant', fullContent]);
       }
 
       res.write(`data: [DONE]\n\n`);
@@ -485,8 +486,8 @@ ${content}
 
       // 保存消息到数据库（如果用户已登录）
       if (req.user && sessionId) {
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'system', systemPrompt);
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', assistantMessage);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'system', systemPrompt]);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'assistant', assistantMessage]);
       }
 
       res.json({
@@ -541,9 +542,9 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
 
       // 保存消息到数据库（如果用户已登录）
       if (req.user && sessionId) {
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'user', message);
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', fullContent);
-        db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), sessionId);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'user', message]);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'assistant', fullContent]);
+        await db.run('UPDATE sessions SET updated_at = ? WHERE id = ?', [Date.now(), sessionId]);
       }
 
       res.write(`data: [DONE]\n\n`);
@@ -561,9 +562,9 @@ app.post('/api/chat', optionalAuth, async (req, res) => {
 
       // 保存消息到数据库（如果用户已登录）
       if (req.user && sessionId) {
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'user', message);
-        db.prepare('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)').run(sessionId, 'assistant', assistantMessage);
-        db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), sessionId);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'user', message]);
+        await db.run('INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)', [sessionId, 'assistant', assistantMessage]);
+        await db.run('UPDATE sessions SET updated_at = ? WHERE id = ?', [Date.now(), sessionId]);
       }
 
       res.json({
@@ -601,30 +602,28 @@ app.post('/api/admin/verify', (req, res) => {
 });
 
 // 获取详细统计数据
-app.get('/api/admin/stats', adminAuth, (req, res) => {
+app.get('/api/admin/stats', adminAuth, async (req, res) => {
   try {
     // 用户总数
-    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-    const sessionCount = db.prepare('SELECT COUNT(*) as count FROM sessions').get().count;
-    const messageCount = db.prepare('SELECT COUNT(*) as count FROM messages').get().count;
+    const userCountResult = await db.get('SELECT COUNT(*) as count FROM users', []);
+    const sessionCountResult = await db.get('SELECT COUNT(*) as count FROM sessions', []);
+    const messageCountResult = await db.get('SELECT COUNT(*) as count FROM messages', []);
 
     // 今日新注册用户
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayTimestamp = today.getTime();
-    const todayUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE created_at >= ?').get(todayTimestamp).count;
-
-    // 今日活跃会话
-    const todaySessions = db.prepare('SELECT COUNT(*) as count FROM sessions WHERE updated_at >= ?').get(todayTimestamp).count;
+    const todayUsersResult = await db.get('SELECT COUNT(*) as count FROM users WHERE created_at >= ?', [todayTimestamp]);
+    const todaySessionsResult = await db.get('SELECT COUNT(*) as count FROM sessions WHERE updated_at >= ?', [todayTimestamp]);
 
     res.json({
       success: true,
       stats: {
-        userCount,
-        sessionCount,
-        messageCount,
-        todayUsers,
-        todaySessions
+        userCount: userCountResult?.count || 0,
+        sessionCount: sessionCountResult?.count || 0,
+        messageCount: messageCountResult?.count || 0,
+        todayUsers: todayUsersResult?.count || 0,
+        todaySessions: todaySessionsResult?.count || 0
       }
     });
   } catch (error) {
@@ -634,10 +633,10 @@ app.get('/api/admin/stats', adminAuth, (req, res) => {
 });
 
 // 获取用户列表（含详细活跃数据）
-app.get('/api/admin/users', adminAuth, (req, res) => {
+app.get('/api/admin/users', adminAuth, async (req, res) => {
   try {
-    const users = db.prepare(`
-      SELECT
+    const users = await db.all(
+      `SELECT
         u.id,
         u.username,
         u.nickname,
@@ -649,8 +648,9 @@ app.get('/api/admin/users', adminAuth, (req, res) => {
       LEFT JOIN sessions s ON u.id = s.user_id
       LEFT JOIN messages m ON s.id = m.session_id
       GROUP BY u.id
-      ORDER BY u.created_at DESC
-    `).all();
+      ORDER BY u.created_at DESC`,
+      []
+    );
 
     res.json({
       success: true,
@@ -672,17 +672,17 @@ app.get('/api/admin/users', adminAuth, (req, res) => {
 });
 
 // 获取用户详情（学习记录）
-app.get('/api/admin/users/:userId', adminAuth, (req, res) => {
+app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = db.prepare('SELECT id, username, nickname, created_at FROM users WHERE id = ?').get(userId);
+    const user = await db.get('SELECT id, username, nickname, created_at FROM users WHERE id = ?', [userId]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
 
-    const sessions = db.prepare(`
-      SELECT
+    const sessions = await db.all(
+      `SELECT
         s.id,
         s.file_name,
         s.scenario,
@@ -694,8 +694,9 @@ app.get('/api/admin/users/:userId', adminAuth, (req, res) => {
       LEFT JOIN messages m ON s.id = m.session_id
       WHERE s.user_id = ?
       GROUP BY s.id
-      ORDER BY s.updated_at DESC
-    `).all(userId);
+      ORDER BY s.updated_at DESC`,
+      [userId]
+    );
 
     res.json({
       success: true,
@@ -751,6 +752,27 @@ app.get('/api/summary/:sessionId', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
-});
+// 启动服务器（先初始化数据库）
+async function startServer() {
+  try {
+    // 初始化 Turso 数据库
+    await db.init();
+
+    // 确保 uploads 目录存在
+    if (!fs.existsSync('uploads')) {
+      fs.mkdirSync('uploads', { recursive: true });
+    }
+    if (!fs.existsSync('uploads/temp')) {
+      fs.mkdirSync('uploads/temp', { recursive: true });
+    }
+
+    app.listen(PORT, () => {
+      console.log(`服务器运行在 http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('启动服务器失败:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
