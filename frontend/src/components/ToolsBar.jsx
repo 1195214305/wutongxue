@@ -8,11 +8,46 @@ function ToolsBar({
   onOpenGoals,
   onOpenWrongQuestions,
   onOpenAchievements,
-  onOpenReminder
+  onOpenReminder,
+  onOpenFlashcards,
+  onOpenQuickReview,
+  onEnterFocusMode
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const tools = [
+    {
+      id: 'focus',
+      name: '专注模式',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      ),
+      color: 'from-emerald-500 to-teal-500',
+      onClick: onEnterFocusMode
+    },
+    {
+      id: 'flashcards',
+      name: '闪卡记忆',
+      icon: (
+        <span className="text-lg">🃏</span>
+      ),
+      color: 'from-indigo-500 to-purple-500',
+      onClick: onOpenFlashcards
+    },
+    {
+      id: 'quickReview',
+      name: '快速复习',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      ),
+      color: 'from-teal-500 to-cyan-500',
+      onClick: onOpenQuickReview
+    },
     {
       id: 'dashboard',
       name: '数据统计',

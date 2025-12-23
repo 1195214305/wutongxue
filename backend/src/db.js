@@ -162,6 +162,24 @@ async function initDatabase() {
       )
     `);
 
+    // 闪卡表（间隔重复记忆）
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS flashcards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        front TEXT NOT NULL,
+        back TEXT NOT NULL,
+        tags TEXT,
+        ease_factor REAL DEFAULT 2.5,
+        interval INTEGER DEFAULT 1,
+        repetitions INTEGER DEFAULT 0,
+        next_review_date TEXT,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
     // 创建索引
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`);
@@ -172,6 +190,7 @@ async function initDatabase() {
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_wrong_questions_user_id ON wrong_questions(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id)`);
 
     console.log('Turso 数据库初始化成功');
   } catch (error) {

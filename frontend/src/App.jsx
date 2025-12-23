@@ -17,6 +17,9 @@ import GoalsPanel from './components/GoalsPanel'
 import WrongQuestionsPanel from './components/WrongQuestionsPanel'
 import AchievementsPanel from './components/AchievementsPanel'
 import ReminderPanel from './components/ReminderPanel'
+import FlashcardsPanel from './components/FlashcardsPanel'
+import QuickReviewPanel from './components/QuickReviewPanel'
+import FocusMode from './components/FocusMode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // localStorage keys
@@ -68,6 +71,9 @@ function AppContent() {
   const [showWrongQuestions, setShowWrongQuestions] = useState(false)
   const [showAchievements, setShowAchievements] = useState(false)
   const [showReminder, setShowReminder] = useState(false)
+  const [showFlashcards, setShowFlashcards] = useState(false)
+  const [showQuickReview, setShowQuickReview] = useState(false)
+  const [focusModeActive, setFocusModeActive] = useState(false)
 
   // 学习历史（本地 + 云端）
   const [history, setHistory] = useState(() => {
@@ -138,6 +144,8 @@ function AppContent() {
         setShowWrongQuestions(false)
         setShowAchievements(false)
         setShowReminder(false)
+        setShowFlashcards(false)
+        setShowQuickReview(false)
       }
       // Ctrl+Shift+A 打开管理员面板
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
@@ -385,6 +393,7 @@ function AppContent() {
   }
 
   return (
+    <FocusMode isActive={focusModeActive} onExit={() => setFocusModeActive(false)}>
     <div className={`min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors`}>
       <Header
         step={step}
@@ -534,6 +543,8 @@ function AppContent() {
       <WrongQuestionsPanel isOpen={showWrongQuestions} onClose={() => setShowWrongQuestions(false)} />
       <AchievementsPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
       <ReminderPanel isOpen={showReminder} onClose={() => setShowReminder(false)} />
+      <FlashcardsPanel isOpen={showFlashcards} onClose={() => setShowFlashcards(false)} />
+      <QuickReviewPanel isOpen={showQuickReview} onClose={() => setShowQuickReview(false)} />
 
       {/* 工具栏 */}
       <ToolsBar
@@ -544,11 +555,15 @@ function AppContent() {
         onOpenWrongQuestions={() => setShowWrongQuestions(true)}
         onOpenAchievements={() => setShowAchievements(true)}
         onOpenReminder={() => setShowReminder(true)}
+        onOpenFlashcards={() => setShowFlashcards(true)}
+        onOpenQuickReview={() => setShowQuickReview(true)}
+        onEnterFocusMode={() => setFocusModeActive(true)}
       />
 
       {/* 新用户引导 */}
       <UserTour />
     </div>
+    </FocusMode>
   )
 }
 

@@ -1272,7 +1272,7 @@ app.get('/api/reminders', authenticateToken, async (req, res) => {
 // 更新提醒设置
 app.post('/api/reminders', authenticateToken, async (req, res) => {
   try {
-    const { enabled, reminderTime } = req.body;
+    const { enabled, time } = req.body;
 
     // 检查是否已有设置
     const existing = await db.get('SELECT id FROM reminders WHERE user_id = ?', [req.user.id]);
@@ -1280,12 +1280,12 @@ app.post('/api/reminders', authenticateToken, async (req, res) => {
     if (existing) {
       await db.run(
         `UPDATE reminders SET enabled = ?, reminder_time = ?, updated_at = ? WHERE user_id = ?`,
-        [enabled ? 1 : 0, reminderTime || '20:00', Date.now(), req.user.id]
+        [enabled ? 1 : 0, time || '20:00', Date.now(), req.user.id]
       );
     } else {
       await db.run(
         `INSERT INTO reminders (user_id, enabled, reminder_time, updated_at) VALUES (?, ?, ?, ?)`,
-        [req.user.id, enabled ? 1 : 0, reminderTime || '20:00', Date.now()]
+        [req.user.id, enabled ? 1 : 0, time || '20:00', Date.now()]
       );
     }
 
@@ -1293,6 +1293,125 @@ app.post('/api/reminders', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('更新提醒设置错误:', error);
     res.status(500).json({ error: '保存提醒设置失败' });
+  }
+});
+
+// ==================== 闪卡接口 ====================
+
+// 获取用户闪卡
+app.get('/api/flashcards', authenticateToken, async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : null;
+    let sql = `SELECT * FROM flashcards WHERE user_id = ? ORDER BY created_at DESC`;
+    if (limit) {
+      sql += ` LIMIT ${limit}`;
+    }
+    const flashcards = await db.all(sql, [req.user.id]);
+    res.json({ success: true, flashcards });
+  } catch (error) {
+    console.error('获取闪卡错误:', error);
+    res.status(500).json({ error: '获取闪卡失败' });
+  }
+});
+
+// 创建闪卡
+app.post('/api/flashcards', authenticateToken, async (req, res) => {
+  try {
+    const { front, back, tags } = req.body;
+
+    if (!front || !back) {
+      return res.status(400).json({ error: '正面和背面内容不能为空' });
+    }
+
+    const cardId = uuidv4();
+    await db.run(
+      `INSERT INTO flashcards (id, user_id, front, back, tags, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [cardId, req.user.id, front, back, tags || null, Date.now()]
+    );
+
+    res.json({ success: true, id: cardId, message: '闪卡创建成功' });
+  } catch (error) {
+    console.error('创建闪卡错误:', error);
+    res.status(500).json({ error: '创建闪卡失败' });
+  }
+});
+
+// 更新闪卡（复习后更新间隔重复参数）
+app.put('/api/flashcards/:cardId', authenticateToken, async (req, res) => {
+  try {
+    const { cardId } = req.params;
+    const { easeFactor, interval, repetitions, nextReviewDate, front, back, tags } = req.body;
+
+    const card = await db.get('SELECT id FROM flashcards WHERE id = ? AND user_id = ?', [cardId, req.user.id]);
+    if (!card) {
+      return res.status(404).json({ error: '闪卡不存在' });
+    }
+
+    // 构建更新语句
+    const updates = [];
+    const params = [];
+
+    if (easeFactor !== undefined) {
+      updates.push('ease_factor = ?');
+      params.push(easeFactor);
+    }
+    if (interval !== undefined) {
+      updates.push('interval = ?');
+      params.push(interval);
+    }
+    if (repetitions !== undefined) {
+      updates.push('repetitions = ?');
+      params.push(repetitions);
+    }
+    if (nextReviewDate !== undefined) {
+      updates.push('next_review_date = ?');
+      params.push(nextReviewDate);
+    }
+    if (front !== undefined) {
+      updates.push('front = ?');
+      params.push(front);
+    }
+    if (back !== undefined) {
+      updates.push('back = ?');
+      params.push(back);
+    }
+    if (tags !== undefined) {
+      updates.push('tags = ?');
+      params.push(tags);
+    }
+
+    updates.push('updated_at = ?');
+    params.push(Date.now());
+    params.push(cardId);
+
+    await db.run(
+      `UPDATE flashcards SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    res.json({ success: true, message: '闪卡更新成功' });
+  } catch (error) {
+    console.error('更新闪卡错误:', error);
+    res.status(500).json({ error: '更新闪卡失败' });
+  }
+});
+
+// 删除闪卡
+app.delete('/api/flashcards/:cardId', authenticateToken, async (req, res) => {
+  try {
+    const { cardId } = req.params;
+
+    const card = await db.get('SELECT id FROM flashcards WHERE id = ? AND user_id = ?', [cardId, req.user.id]);
+    if (!card) {
+      return res.status(404).json({ error: '闪卡不存在' });
+    }
+
+    await db.run('DELETE FROM flashcards WHERE id = ?', [cardId]);
+    res.json({ success: true, message: '闪卡删除成功' });
+  } catch (error) {
+    console.error('删除闪卡错误:', error);
+    res.status(500).json({ error: '删除闪卡失败' });
   }
 });
 
