@@ -1,423 +1,94 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// 环境音效类型 - 使用可靠的免费音频资源
-// 音频来源: GitHub 托管的公共领域音频
+// 环境音效类型 - 使用本地音频文件
 const AMBIENT_SOUNDS = [
   {
     id: 'rain',
     name: '雨声',
     icon: '🌧️',
     color: 'from-blue-400 to-cyan-500',
+    file: '/sounds/rain.mp3'
   },
   {
     id: 'forest',
     name: '森林',
     icon: '🌲',
     color: 'from-green-400 to-emerald-500',
+    file: '/sounds/forest.mp3'
   },
   {
     id: 'ocean',
     name: '海浪',
     icon: '🌊',
     color: 'from-cyan-400 to-blue-500',
+    file: '/sounds/ocean.mp3'
   },
   {
     id: 'fire',
     name: '篝火',
     icon: '🔥',
     color: 'from-orange-400 to-red-500',
+    file: '/sounds/fire.mp3'
   },
   {
     id: 'wind',
     name: '微风',
     icon: '🍃',
     color: 'from-teal-400 to-green-500',
+    file: '/sounds/wind.mp3'
   },
   {
     id: 'cafe',
     name: '咖啡馆',
     icon: '☕',
     color: 'from-amber-400 to-orange-500',
+    file: '/sounds/cafe.mp3'
   },
 ]
 
-// 使用 Web Audio API 生成高质量环境音效
-class AmbientSoundGenerator {
+// 音频播放器
+class AudioPlayer {
   constructor() {
-    this.audioContext = null
-    this.masterGain = null
-    this.nodes = []
+    this.audio = null
     this.isPlaying = false
     this.currentSoundId = null
   }
 
-  init() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      this.masterGain = this.audioContext.createGain()
-      this.masterGain.connect(this.audioContext.destination)
-    }
-    if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume()
-    }
-  }
-
-  // 创建噪音缓冲区
-  createNoiseBuffer(type = 'white', duration = 2) {
-    const bufferSize = this.audioContext.sampleRate * duration
-    const buffer = this.audioContext.createBuffer(2, bufferSize, this.audioContext.sampleRate)
-
-    for (let channel = 0; channel < 2; channel++) {
-      const data = buffer.getChannelData(channel)
-
-      if (type === 'white') {
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1
-        }
-      } else if (type === 'pink') {
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1
-          b0 = 0.99886 * b0 + white * 0.0555179
-          b1 = 0.99332 * b1 + white * 0.0750759
-          b2 = 0.96900 * b2 + white * 0.1538520
-          b3 = 0.86650 * b3 + white * 0.3104856
-          b4 = 0.55000 * b4 + white * 0.5329522
-          b5 = -0.7616 * b5 - white * 0.0168980
-          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
-          b6 = white * 0.115926
-        }
-      } else if (type === 'brown') {
-        let lastOut = 0
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1
-          data[i] = (lastOut + (0.02 * white)) / 1.02
-          lastOut = data[i]
-          data[i] *= 3.5
-        }
-      }
-    }
-    return buffer
-  }
-
-  // 创建雨声效果
-  createRainSound(volume) {
-    // 主要雨声 - 粉红噪音 + 低通滤波
-    const rainNoise = this.audioContext.createBufferSource()
-    rainNoise.buffer = this.createNoiseBuffer('pink')
-    rainNoise.loop = true
-
-    const rainFilter = this.audioContext.createBiquadFilter()
-    rainFilter.type = 'lowpass'
-    rainFilter.frequency.value = 4000
-    rainFilter.Q.value = 0.5
-
-    const rainGain = this.audioContext.createGain()
-    rainGain.gain.value = volume * 0.6
-
-    rainNoise.connect(rainFilter)
-    rainFilter.connect(rainGain)
-    rainGain.connect(this.masterGain)
-    rainNoise.start()
-
-    // 雨滴声 - 高频点缀
-    const dropsNoise = this.audioContext.createBufferSource()
-    dropsNoise.buffer = this.createNoiseBuffer('white')
-    dropsNoise.loop = true
-
-    const dropsFilter = this.audioContext.createBiquadFilter()
-    dropsFilter.type = 'highpass'
-    dropsFilter.frequency.value = 3000
-
-    const dropsGain = this.audioContext.createGain()
-    dropsGain.gain.value = volume * 0.15
-
-    dropsNoise.connect(dropsFilter)
-    dropsFilter.connect(dropsGain)
-    dropsGain.connect(this.masterGain)
-    dropsNoise.start()
-
-    this.nodes = [
-      { source: rainNoise, gain: rainGain },
-      { source: dropsNoise, gain: dropsGain }
-    ]
-  }
-
-  // 创建森林声效果
-  createForestSound(volume) {
-    // 风吹树叶声
-    const windNoise = this.audioContext.createBufferSource()
-    windNoise.buffer = this.createNoiseBuffer('pink')
-    windNoise.loop = true
-
-    const windFilter = this.audioContext.createBiquadFilter()
-    windFilter.type = 'bandpass'
-    windFilter.frequency.value = 800
-    windFilter.Q.value = 0.3
-
-    const windGain = this.audioContext.createGain()
-    windGain.gain.value = volume * 0.4
-
-    windNoise.connect(windFilter)
-    windFilter.connect(windGain)
-    windGain.connect(this.masterGain)
-    windNoise.start()
-
-    // 鸟鸣模拟 - 高频调制
-    const birdNoise = this.audioContext.createBufferSource()
-    birdNoise.buffer = this.createNoiseBuffer('white')
-    birdNoise.loop = true
-
-    const birdFilter = this.audioContext.createBiquadFilter()
-    birdFilter.type = 'bandpass'
-    birdFilter.frequency.value = 3000
-    birdFilter.Q.value = 5
-
-    const birdGain = this.audioContext.createGain()
-    birdGain.gain.value = volume * 0.08
-
-    birdNoise.connect(birdFilter)
-    birdFilter.connect(birdGain)
-    birdGain.connect(this.masterGain)
-    birdNoise.start()
-
-    this.nodes = [
-      { source: windNoise, gain: windGain },
-      { source: birdNoise, gain: birdGain }
-    ]
-  }
-
-  // 创建海浪声效果
-  createOceanSound(volume) {
-    // 海浪主体 - 棕色噪音
-    const waveNoise = this.audioContext.createBufferSource()
-    waveNoise.buffer = this.createNoiseBuffer('brown')
-    waveNoise.loop = true
-
-    const waveFilter = this.audioContext.createBiquadFilter()
-    waveFilter.type = 'lowpass'
-    waveFilter.frequency.value = 600
-    waveFilter.Q.value = 0.2
-
-    const waveGain = this.audioContext.createGain()
-    waveGain.gain.value = volume * 0.7
-
-    waveNoise.connect(waveFilter)
-    waveFilter.connect(waveGain)
-    waveGain.connect(this.masterGain)
-    waveNoise.start()
-
-    // 浪花声
-    const foamNoise = this.audioContext.createBufferSource()
-    foamNoise.buffer = this.createNoiseBuffer('white')
-    foamNoise.loop = true
-
-    const foamFilter = this.audioContext.createBiquadFilter()
-    foamFilter.type = 'highpass'
-    foamFilter.frequency.value = 2000
-
-    const foamGain = this.audioContext.createGain()
-    foamGain.gain.value = volume * 0.1
-
-    foamNoise.connect(foamFilter)
-    foamFilter.connect(foamGain)
-    foamGain.connect(this.masterGain)
-    foamNoise.start()
-
-    this.nodes = [
-      { source: waveNoise, gain: waveGain },
-      { source: foamNoise, gain: foamGain }
-    ]
-  }
-
-  // 创建篝火声效果
-  createFireSound(volume) {
-    // 火焰噼啪声
-    const crackleNoise = this.audioContext.createBufferSource()
-    crackleNoise.buffer = this.createNoiseBuffer('brown')
-    crackleNoise.loop = true
-
-    const crackleFilter = this.audioContext.createBiquadFilter()
-    crackleFilter.type = 'lowpass'
-    crackleFilter.frequency.value = 300
-    crackleFilter.Q.value = 0.8
-
-    const crackleGain = this.audioContext.createGain()
-    crackleGain.gain.value = volume * 0.5
-
-    crackleNoise.connect(crackleFilter)
-    crackleFilter.connect(crackleGain)
-    crackleGain.connect(this.masterGain)
-    crackleNoise.start()
-
-    // 火焰呼呼声
-    const roarNoise = this.audioContext.createBufferSource()
-    roarNoise.buffer = this.createNoiseBuffer('pink')
-    roarNoise.loop = true
-
-    const roarFilter = this.audioContext.createBiquadFilter()
-    roarFilter.type = 'bandpass'
-    roarFilter.frequency.value = 150
-    roarFilter.Q.value = 0.5
-
-    const roarGain = this.audioContext.createGain()
-    roarGain.gain.value = volume * 0.3
-
-    roarNoise.connect(roarFilter)
-    roarFilter.connect(roarGain)
-    roarGain.connect(this.masterGain)
-    roarNoise.start()
-
-    this.nodes = [
-      { source: crackleNoise, gain: crackleGain },
-      { source: roarNoise, gain: roarGain }
-    ]
-  }
-
-  // 创建微风声效果
-  createWindSound(volume) {
-    // 主风声
-    const windNoise = this.audioContext.createBufferSource()
-    windNoise.buffer = this.createNoiseBuffer('pink')
-    windNoise.loop = true
-
-    const windFilter = this.audioContext.createBiquadFilter()
-    windFilter.type = 'bandpass'
-    windFilter.frequency.value = 500
-    windFilter.Q.value = 0.2
-
-    const windGain = this.audioContext.createGain()
-    windGain.gain.value = volume * 0.5
-
-    windNoise.connect(windFilter)
-    windFilter.connect(windGain)
-    windGain.connect(this.masterGain)
-    windNoise.start()
-
-    // 树叶沙沙声
-    const leafNoise = this.audioContext.createBufferSource()
-    leafNoise.buffer = this.createNoiseBuffer('white')
-    leafNoise.loop = true
-
-    const leafFilter = this.audioContext.createBiquadFilter()
-    leafFilter.type = 'highpass'
-    leafFilter.frequency.value = 1500
-
-    const leafGain = this.audioContext.createGain()
-    leafGain.gain.value = volume * 0.15
-
-    leafNoise.connect(leafFilter)
-    leafFilter.connect(leafGain)
-    leafGain.connect(this.masterGain)
-    leafNoise.start()
-
-    this.nodes = [
-      { source: windNoise, gain: windGain },
-      { source: leafNoise, gain: leafGain }
-    ]
-  }
-
-  // 创建咖啡馆声效果
-  createCafeSound(volume) {
-    // 人声嘈杂背景
-    const chatterNoise = this.audioContext.createBufferSource()
-    chatterNoise.buffer = this.createNoiseBuffer('pink')
-    chatterNoise.loop = true
-
-    const chatterFilter = this.audioContext.createBiquadFilter()
-    chatterFilter.type = 'bandpass'
-    chatterFilter.frequency.value = 1000
-    chatterFilter.Q.value = 0.5
-
-    const chatterGain = this.audioContext.createGain()
-    chatterGain.gain.value = volume * 0.3
-
-    chatterNoise.connect(chatterFilter)
-    chatterFilter.connect(chatterGain)
-    chatterGain.connect(this.masterGain)
-    chatterNoise.start()
-
-    // 杯碟声
-    const clinkNoise = this.audioContext.createBufferSource()
-    clinkNoise.buffer = this.createNoiseBuffer('white')
-    clinkNoise.loop = true
-
-    const clinkFilter = this.audioContext.createBiquadFilter()
-    clinkFilter.type = 'highpass'
-    clinkFilter.frequency.value = 4000
-
-    const clinkGain = this.audioContext.createGain()
-    clinkGain.gain.value = volume * 0.05
-
-    clinkNoise.connect(clinkFilter)
-    clinkFilter.connect(clinkGain)
-    clinkGain.connect(this.masterGain)
-    clinkNoise.start()
-
-    this.nodes = [
-      { source: chatterNoise, gain: chatterGain },
-      { source: clinkNoise, gain: clinkGain }
-    ]
-  }
-
-  play(soundId, volume = 0.5) {
-    this.init()
+  play(soundFile, soundId, volume = 0.5) {
     this.stop()
 
-    this.masterGain.gain.value = 1
+    this.audio = new Audio(soundFile)
+    this.audio.loop = true
+    this.audio.volume = volume
 
-    switch (soundId) {
-      case 'rain':
-        this.createRainSound(volume)
-        break
-      case 'forest':
-        this.createForestSound(volume)
-        break
-      case 'ocean':
-        this.createOceanSound(volume)
-        break
-      case 'fire':
-        this.createFireSound(volume)
-        break
-      case 'wind':
-        this.createWindSound(volume)
-        break
-      case 'cafe':
-        this.createCafeSound(volume)
-        break
-      default:
-        this.createRainSound(volume)
-    }
-
-    this.isPlaying = true
-    this.currentSoundId = soundId
+    this.audio.play().then(() => {
+      this.isPlaying = true
+      this.currentSoundId = soundId
+    }).catch(err => {
+      console.error('播放失败:', err)
+      this.isPlaying = false
+    })
   }
 
   stop() {
-    this.nodes.forEach(node => {
-      try {
-        node.source.stop()
-        node.source.disconnect()
-        node.gain.disconnect()
-      } catch (e) {}
-    })
-    this.nodes = []
+    if (this.audio) {
+      this.audio.pause()
+      this.audio.currentTime = 0
+      this.audio = null
+    }
     this.isPlaying = false
     this.currentSoundId = null
   }
 
   setVolume(volume) {
-    this.nodes.forEach(node => {
-      // 按比例调整各层音量
-      const currentRatio = node.gain.gain.value / (this.lastVolume || 0.5)
-      node.gain.gain.value = volume * currentRatio
-    })
-    this.lastVolume = volume
+    if (this.audio) {
+      this.audio.volume = volume
+    }
   }
 }
 
-const soundGenerator = new AmbientSoundGenerator()
+const audioPlayer = new AudioPlayer()
 
 function MusicPlayer() {
   const [isOpen, setIsOpen] = useState(false)
@@ -427,11 +98,11 @@ function MusicPlayer() {
 
   const handlePlaySound = (sound) => {
     if (currentSound?.id === sound.id && isPlaying) {
-      soundGenerator.stop()
+      audioPlayer.stop()
       setIsPlaying(false)
       setCurrentSound(null)
     } else {
-      soundGenerator.play(sound.id, volume)
+      audioPlayer.play(sound.file, sound.id, volume)
       setIsPlaying(true)
       setCurrentSound(sound)
     }
@@ -440,11 +111,11 @@ function MusicPlayer() {
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value)
     setVolume(newVolume)
-    soundGenerator.setVolume(newVolume)
+    audioPlayer.setVolume(newVolume)
   }
 
   const handleStop = () => {
-    soundGenerator.stop()
+    audioPlayer.stop()
     setIsPlaying(false)
     setCurrentSound(null)
   }
@@ -452,7 +123,7 @@ function MusicPlayer() {
   // 组件卸载时停止播放
   useEffect(() => {
     return () => {
-      soundGenerator.stop()
+      audioPlayer.stop()
     }
   }, [])
 
@@ -558,7 +229,7 @@ function MusicPlayer() {
 
             {/* 提示 */}
             <p className="mt-3 text-xs text-warm-400 dark:text-warm-500 text-center">
-              使用 Web Audio API 生成，多层混合音效
+              高品质环境音效，助你专注学习
             </p>
           </motion.div>
         )}
