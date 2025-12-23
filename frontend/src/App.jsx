@@ -20,6 +20,7 @@ import ReminderPanel from './components/ReminderPanel'
 import FlashcardsPanel from './components/FlashcardsPanel'
 import QuickReviewPanel from './components/QuickReviewPanel'
 import FocusMode from './components/FocusMode'
+import ChangePasswordModal from './components/ChangePasswordModal'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // localStorage keys
@@ -74,6 +75,7 @@ function AppContent() {
   const [showFlashcards, setShowFlashcards] = useState(false)
   const [showQuickReview, setShowQuickReview] = useState(false)
   const [focusModeActive, setFocusModeActive] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   // 学习历史（本地 + 云端）
   const [history, setHistory] = useState(() => {
@@ -146,6 +148,7 @@ function AppContent() {
         setShowReminder(false)
         setShowFlashcards(false)
         setShowQuickReview(false)
+        setShowChangePassword(false)
       }
       // Ctrl+Shift+A 打开管理员面板
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
@@ -407,6 +410,7 @@ function AppContent() {
         onShowAuth={handleShowAuth}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        onShowChangePassword={() => setShowChangePassword(true)}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -545,6 +549,7 @@ function AppContent() {
       <ReminderPanel isOpen={showReminder} onClose={() => setShowReminder(false)} />
       <FlashcardsPanel isOpen={showFlashcards} onClose={() => setShowFlashcards(false)} />
       <QuickReviewPanel isOpen={showQuickReview} onClose={() => setShowQuickReview(false)} />
+      <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
 
       {/* 工具栏 */}
       <ToolsBar

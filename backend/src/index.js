@@ -245,6 +245,42 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+// 用户修改密码
+app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: '请输入旧密码和新密码' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: '新密码至少6个字符' });
+    }
+
+    // 获取用户当前密码
+    const user = await db.get('SELECT password FROM users WHERE id = ?', [req.user.id]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 验证旧密码
+    const validPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: '旧密码错误' });
+    }
+
+    // 加密新密码并更新
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+
+    res.json({ success: true, message: '密码修改成功' });
+  } catch (error) {
+    console.error('修改密码错误:', error);
+    res.status(500).json({ error: '修改密码失败' });
+  }
+});
+
 // 管理员密码重置接口（需要管理员密钥）
 app.post('/api/admin/reset-password', async (req, res) => {
   try {

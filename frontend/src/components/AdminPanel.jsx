@@ -13,6 +13,12 @@ function AdminPanel({ isOpen, onClose }) {
   const [selectedUser, setSelectedUser] = useState(null)
   const [activeTab, setActiveTab] = useState('overview')
 
+  // 密码重置相关状态
+  const [resetUsername, setResetUsername] = useState('')
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMessage, setResetMessage] = useState({ type: '', text: '' })
+
   // 验证管理员密钥
   const handleLogin = async () => {
     if (!adminKey.trim()) {
@@ -133,6 +139,54 @@ function AdminPanel({ isOpen, onClose }) {
     practice: '实操场景'
   }
 
+  // 重置用户密码
+  const handleResetPassword = async () => {
+    if (!resetUsername.trim()) {
+      setResetMessage({ type: 'error', text: '请输入用户名' })
+      return
+    }
+    if (!resetNewPassword.trim() || resetNewPassword.length < 6) {
+      setResetMessage({ type: 'error', text: '新密码至少6个字符' })
+      return
+    }
+
+    setResetLoading(true)
+    setResetMessage({ type: '', text: '' })
+
+    try {
+      const key = adminKey || localStorage.getItem('wutongxue_admin_key')
+      const response = await fetch(`${API_BASE}/api/admin/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminKey: key,
+          username: resetUsername,
+          newPassword: resetNewPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setResetMessage({ type: 'success', text: `用户 ${resetUsername} 的密码已重置为: ${resetNewPassword}` })
+        setResetUsername('')
+        setResetNewPassword('')
+      } else {
+        setResetMessage({ type: 'error', text: data.error || '重置失败' })
+      }
+    } catch (err) {
+      setResetMessage({ type: 'error', text: '网络错误，请重试' })
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
+  // 快速填充用户名（从用户列表点击）
+  const handleQuickFillUsername = (username) => {
+    setResetUsername(username)
+    setActiveTab('reset')
+  }
+
   if (!isOpen) return null
 
   return (
@@ -241,6 +295,16 @@ function AdminPanel({ isOpen, onClose }) {
                     }`}
                   >
                     用户列表
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('reset'); setSelectedUser(null); }}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === 'reset'
+                        ? 'border-warm-600 text-warm-700 dark:text-cream-100'
+                        : 'border-transparent text-warm-500 hover:text-warm-700 dark:text-warm-400'
+                    }`}
+                  >
+                    密码重置
                   </button>
                 </div>
 
@@ -358,6 +422,98 @@ function AdminPanel({ isOpen, onClose }) {
                     ) : (
                       <p className="text-sm text-warm-500 dark:text-warm-400 text-center py-4">暂无学习记录</p>
                     )}
+                  </div>
+                ) : activeTab === 'reset' ? (
+                  /* 密码重置 */
+                  <div className="max-w-md mx-auto">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-semibold text-warm-800 dark:text-cream-100">重置用户密码</h4>
+                      <p className="text-sm text-warm-500 dark:text-warm-400 mt-1">输入用户名和新密码来重置用户的登录密码</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-warm-700 dark:text-cream-200 mb-1.5">
+                          用户名
+                        </label>
+                        <input
+                          type="text"
+                          value={resetUsername}
+                          onChange={(e) => setResetUsername(e.target.value)}
+                          placeholder="请输入要重置密码的用户名"
+                          className="w-full px-4 py-2.5 bg-cream-50 dark:bg-warm-700 border border-cream-200 dark:border-warm-600 rounded-xl text-warm-800 dark:text-cream-100 placeholder-warm-400 dark:placeholder-warm-500 focus:outline-none focus:ring-2 focus:ring-warm-300 dark:focus:ring-warm-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-warm-700 dark:text-cream-200 mb-1.5">
+                          新密码
+                        </label>
+                        <input
+                          type="text"
+                          value={resetNewPassword}
+                          onChange={(e) => setResetNewPassword(e.target.value)}
+                          placeholder="至少6个字符"
+                          className="w-full px-4 py-2.5 bg-cream-50 dark:bg-warm-700 border border-cream-200 dark:border-warm-600 rounded-xl text-warm-800 dark:text-cream-100 placeholder-warm-400 dark:placeholder-warm-500 focus:outline-none focus:ring-2 focus:ring-warm-300 dark:focus:ring-warm-500"
+                        />
+                        <p className="text-xs text-warm-400 dark:text-warm-500 mt-1">
+                          提示：这里显示明文密码，方便告知用户
+                        </p>
+                      </div>
+
+                      {resetMessage.text && (
+                        <div className={`p-3 rounded-lg text-sm ${
+                          resetMessage.type === 'success'
+                            ? 'bg-sage-50 dark:bg-sage-900/20 text-sage-600 dark:text-sage-400 border border-sage-200 dark:border-sage-800'
+                            : 'bg-terracotta-50 dark:bg-terracotta-900/20 text-terracotta-600 dark:text-terracotta-400 border border-terracotta-200 dark:border-terracotta-800'
+                        }`}>
+                          {resetMessage.text}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleResetPassword}
+                        disabled={resetLoading}
+                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {resetLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            处理中...
+                          </>
+                        ) : (
+                          '重置密码'
+                        )}
+                      </button>
+                    </div>
+
+                    {/* 用户列表快捷选择 */}
+                    <div className="mt-8">
+                      <h5 className="text-sm font-medium text-warm-700 dark:text-cream-200 mb-3">快速选择用户</h5>
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {users.map(user => (
+                          <button
+                            key={user.id}
+                            onClick={() => setResetUsername(user.username)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                              resetUsername === user.username
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                : 'hover:bg-cream-100 dark:hover:bg-warm-700 text-warm-600 dark:text-warm-300'
+                            }`}
+                          >
+                            <span className="font-medium">{user.username}</span>
+                            {user.nickname && user.nickname !== user.username && (
+                              <span className="text-warm-400 dark:text-warm-500 ml-2">({user.nickname})</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   /* 用户列表 */

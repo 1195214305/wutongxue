@@ -10,7 +10,7 @@ const MODELS = [
   { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
 ]
 
-function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth, fontSize, onFontSizeChange }) {
+function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth, fontSize, onFontSizeChange, onShowChangePassword }) {
   const [showModelMenu, setShowModelMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const modelMenuRef = useRef(null)
@@ -206,6 +206,18 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
                           </p>
                         </div>
                         <div className="p-2">
+                          <button
+                            onClick={() => {
+                              onShowChangePassword && onShowChangePassword()
+                              setShowUserMenu(false)
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-cream-50 dark:hover:bg-warm-700/50 text-warm-600 dark:text-warm-300 text-sm flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                            修改密码
+                          </button>
                           <button
                             onClick={() => {
                               logout()
