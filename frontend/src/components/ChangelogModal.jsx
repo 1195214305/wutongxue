@@ -9,8 +9,15 @@ const CHANGELOG = [
     changes: [
       { type: 'feature', text: '闪卡记忆系统 - 基于间隔重复算法的高效记忆工具' },
       { type: 'feature', text: '专注模式 - 全屏无干扰学习，自动计时' },
-      { type: 'feature', text: '快速复习 - 一键回顾笔记、收藏、错题、闪卡' },
-      { type: 'improve', text: '修复环境音效播放问题，新增5种音效（雷雨、溪流、夜晚、图书馆、键盘声）' },
+      { type: 'feature', text: '快速复习 - 一键回顾笔记、收藏、错题、闪卡' }
+    ]
+  },
+  {
+    version: 'v1.7.2',
+    date: '2025-12-23',
+    changes: [
+      { type: 'fix', text: '修复森林、微风、咖啡馆音效播放失败问题' },
+      { type: 'feature', text: '新增5种环境音效：雷雨、溪流、夜晚、图书馆、键盘声' },
       { type: 'improve', text: '现共有11种高品质环境音效可选' }
     ]
   },
