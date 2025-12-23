@@ -11,6 +11,13 @@ const AMBIENT_SOUNDS = [
     file: '/sounds/rain.mp3'
   },
   {
+    id: 'thunder',
+    name: '雷雨',
+    icon: '⛈️',
+    color: 'from-slate-500 to-blue-600',
+    file: '/sounds/thunder.mp3'
+  },
+  {
     id: 'forest',
     name: '森林',
     icon: '🌲',
@@ -23,6 +30,13 @@ const AMBIENT_SOUNDS = [
     icon: '🌊',
     color: 'from-cyan-400 to-blue-500',
     file: '/sounds/ocean.mp3'
+  },
+  {
+    id: 'stream',
+    name: '溪流',
+    icon: '💧',
+    color: 'from-sky-400 to-cyan-500',
+    file: '/sounds/stream.mp3'
   },
   {
     id: 'fire',
@@ -39,11 +53,32 @@ const AMBIENT_SOUNDS = [
     file: '/sounds/wind.mp3'
   },
   {
+    id: 'night',
+    name: '夜晚',
+    icon: '🌙',
+    color: 'from-indigo-500 to-purple-600',
+    file: '/sounds/night.mp3'
+  },
+  {
     id: 'cafe',
     name: '咖啡馆',
     icon: '☕',
     color: 'from-amber-400 to-orange-500',
     file: '/sounds/cafe.mp3'
+  },
+  {
+    id: 'library',
+    name: '图书馆',
+    icon: '📚',
+    color: 'from-stone-400 to-amber-600',
+    file: '/sounds/library.mp3'
+  },
+  {
+    id: 'keyboard',
+    name: '键盘声',
+    icon: '⌨️',
+    color: 'from-gray-400 to-slate-500',
+    file: '/sounds/keyboard.mp3'
   },
 ]
 
