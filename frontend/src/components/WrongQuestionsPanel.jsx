@@ -1,42 +1,97 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
-const STORAGE_KEY = 'wutongxue_wrong_questions'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function WrongQuestionsPanel({ isOpen, onClose }) {
+  const { token, isAuthenticated } = useAuth()
   const [wrongQuestions, setWrongQuestions] = useState([])
   const [selectedQuestion, setSelectedQuestion] = useState(null)
   const [showAnswer, setShowAnswer] = useState(false)
   const [retryAnswer, setRetryAnswer] = useState(null)
-  const [filter, setFilter] = useState('all') // all, unmastered, mastered
+  const [filter, setFilter] = useState('all')
+  const [isLoading, setIsLoading] = useState(false)
 
   // 加载错题
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      setWrongQuestions(JSON.parse(saved))
+    if (isOpen && isAuthenticated) {
+      fetchWrongQuestions()
     }
-  }, [isOpen])
+  }, [isOpen, isAuthenticated])
 
-  // 保存错题
-  const saveWrongQuestions = (newQuestions) => {
-    setWrongQuestions(newQuestions)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newQuestions))
+  const fetchWrongQuestions = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/api/wrong-questions`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setWrongQuestions(data.questions.map(q => ({
+          id: q.id,
+          question: q.question,
+          options: JSON.parse(q.options),
+          correctIndex: q.correct_index,
+          userAnswer: q.user_answer,
+          explanation: q.explanation,
+          fileName: q.file_name,
+          sessionId: q.session_id,
+          mastered: q.mastered === 1,
+          retryCount: q.retry_count,
+          createdAt: q.created_at
+        })))
+      }
+    } catch (error) {
+      console.error('获取错题失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // 删除错题
-  const handleDelete = (id) => {
-    saveWrongQuestions(wrongQuestions.filter(q => q.id !== id))
-    if (selectedQuestion?.id === id) {
-      setSelectedQuestion(null)
+  const handleDelete = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/wrong-questions/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        setWrongQuestions(wrongQuestions.filter(q => q.id !== id))
+        if (selectedQuestion?.id === id) {
+          setSelectedQuestion(null)
+        }
+      }
+    } catch (error) {
+      console.error('删除错题失败:', error)
     }
   }
 
   // 标记为已掌握
-  const handleMarkMastered = (id) => {
-    saveWrongQuestions(wrongQuestions.map(q =>
-      q.id === id ? { ...q, mastered: !q.mastered } : q
-    ))
+  const handleMarkMastered = async (id) => {
+    const question = wrongQuestions.find(q => q.id === id)
+    if (!question) return
+
+    try {
+      const response = await fetch(`${API_BASE}/api/wrong-questions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ mastered: !question.mastered })
+      })
+      if (response.ok) {
+        setWrongQuestions(wrongQuestions.map(q =>
+          q.id === id ? { ...q, mastered: !q.mastered } : q
+        ))
+        if (selectedQuestion?.id === id) {
+          setSelectedQuestion({ ...selectedQuestion, mastered: !selectedQuestion.mastered })
+        }
+      }
+    } catch (error) {
+      console.error('更新错题状态失败:', error)
+    }
   }
 
   // 重做题目
@@ -47,15 +102,28 @@ function WrongQuestionsPanel({ isOpen, onClose }) {
   }
 
   // 提交重做答案
-  const handleSubmitRetry = () => {
+  const handleSubmitRetry = async () => {
     setShowAnswer(true)
     if (retryAnswer === selectedQuestion.correctIndex) {
-      // 答对了，增加正确次数
-      saveWrongQuestions(wrongQuestions.map(q =>
-        q.id === selectedQuestion.id
-          ? { ...q, retryCount: (q.retryCount || 0) + 1, lastRetry: Date.now() }
-          : q
-      ))
+      try {
+        const response = await fetch(`${API_BASE}/api/wrong-questions/${selectedQuestion.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ retryCount: (selectedQuestion.retryCount || 0) + 1 })
+        })
+        if (response.ok) {
+          setWrongQuestions(wrongQuestions.map(q =>
+            q.id === selectedQuestion.id
+              ? { ...q, retryCount: (q.retryCount || 0) + 1 }
+              : q
+          ))
+        }
+      } catch (error) {
+        console.error('更新重做次数失败:', error)
+      }
     }
   }
 
@@ -191,7 +259,19 @@ function WrongQuestionsPanel({ isOpen, onClose }) {
 
           {/* 内容区域 */}
           <div className="p-4 overflow-y-auto max-h-[65vh]">
-            {selectedQuestion ? (
+            {!isAuthenticated ? (
+              <div className="text-center py-12 text-warm-400 dark:text-warm-500">
+                <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p className="text-lg">登录后可使用错题本功能</p>
+                <p className="text-sm mt-2">您的错题将安全存储在云端</p>
+              </div>
+            ) : isLoading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-warm-200 border-t-warm-600 rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : selectedQuestion ? (
               // 重做题目视图
               <div className="space-y-4">
                 <button
@@ -353,29 +433,32 @@ function WrongQuestionsPanel({ isOpen, onClose }) {
 }
 
 // 添加错题的辅助函数
-export const addWrongQuestion = (question, userAnswer, fileName) => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  const wrongQuestions = saved ? JSON.parse(saved) : []
+export const addWrongQuestion = async (question, userAnswer, fileName, sessionId, token) => {
+  if (!token) return false
 
-  // 检查是否已存在相同题目
-  const exists = wrongQuestions.some(q => q.question === question.question)
-  if (exists) return false
+  try {
+    const response = await fetch(`${API_BASE}/api/wrong-questions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        sessionId,
+        fileName,
+        question: question.question,
+        options: question.options,
+        correctIndex: question.correctIndex,
+        userAnswer,
+        explanation: question.explanation
+      })
+    })
 
-  const newQuestion = {
-    id: Date.now().toString(),
-    question: question.question,
-    options: question.options,
-    correctIndex: question.correctIndex,
-    explanation: question.explanation,
-    userAnswer,
-    fileName,
-    mastered: false,
-    retryCount: 0,
-    createdAt: Date.now()
+    return response.ok
+  } catch (error) {
+    console.error('添加错题失败:', error)
+    return false
   }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([newQuestion, ...wrongQuestions]))
-  return true
 }
 
 export default WrongQuestionsPanel

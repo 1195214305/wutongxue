@@ -1,49 +1,104 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
-const STORAGE_KEY = 'wutongxue_notes'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function NotesPanel({ isOpen, onClose, sessionId, fileName }) {
+  const { token, isAuthenticated } = useAuth()
   const [notes, setNotes] = useState([])
   const [newNote, setNewNote] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editContent, setEditContent] = useState('')
-  const [filter, setFilter] = useState('all') // all, current
+  const [filter, setFilter] = useState('all')
+  const [isLoading, setIsLoading] = useState(false)
 
   // 加载笔记
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      setNotes(JSON.parse(saved))
+    if (isOpen && isAuthenticated) {
+      fetchNotes()
     }
-  }, [])
+  }, [isOpen, isAuthenticated])
 
-  // 保存笔记
-  const saveNotes = (newNotes) => {
-    setNotes(newNotes)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newNotes))
+  const fetchNotes = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/api/notes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setNotes(data.notes.map(n => ({
+          id: n.id,
+          content: n.content,
+          sessionId: n.session_id,
+          fileName: n.file_name,
+          createdAt: n.created_at,
+          updatedAt: n.updated_at
+        })))
+      }
+    } catch (error) {
+      console.error('获取笔记失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // 添加笔记
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (!newNote.trim()) return
 
-    const note = {
-      id: Date.now().toString(),
-      content: newNote.trim(),
-      sessionId,
-      fileName,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
+    if (!isAuthenticated) {
+      alert('请先登录后再添加笔记')
+      return
     }
 
-    saveNotes([note, ...notes])
-    setNewNote('')
+    try {
+      const response = await fetch(`${API_BASE}/api/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sessionId,
+          fileName,
+          content: newNote.trim()
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const note = {
+          id: data.noteId,
+          content: newNote.trim(),
+          sessionId,
+          fileName,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+        setNotes([note, ...notes])
+        setNewNote('')
+      }
+    } catch (error) {
+      console.error('添加笔记失败:', error)
+    }
   }
 
   // 删除笔记
-  const handleDeleteNote = (id) => {
-    saveNotes(notes.filter(n => n.id !== id))
+  const handleDeleteNote = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/notes/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        setNotes(notes.filter(n => n.id !== id))
+      }
+    } catch (error) {
+      console.error('删除笔记失败:', error)
+    }
   }
 
   // 编辑笔记
@@ -52,16 +107,31 @@ function NotesPanel({ isOpen, onClose, sessionId, fileName }) {
     setEditContent(note.content)
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editContent.trim()) return
 
-    saveNotes(notes.map(n =>
-      n.id === editingId
-        ? { ...n, content: editContent.trim(), updatedAt: Date.now() }
-        : n
-    ))
-    setEditingId(null)
-    setEditContent('')
+    try {
+      const response = await fetch(`${API_BASE}/api/notes/${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: editContent.trim() })
+      })
+
+      if (response.ok) {
+        setNotes(notes.map(n =>
+          n.id === editingId
+            ? { ...n, content: editContent.trim(), updatedAt: Date.now() }
+            : n
+        ))
+        setEditingId(null)
+        setEditContent('')
+      }
+    } catch (error) {
+      console.error('更新笔记失败:', error)
+    }
   }
 
   // 导出笔记
@@ -176,25 +246,37 @@ function NotesPanel({ isOpen, onClose, sessionId, fileName }) {
 
           {/* 添加笔记 */}
           <div className="p-4 border-b border-cream-200 dark:border-warm-700">
-            <textarea
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              placeholder="记录你的学习心得..."
-              className="w-full p-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 placeholder-warm-400 dark:placeholder-warm-500 resize-none focus:outline-none focus:ring-2 focus:ring-warm-500"
-              rows={3}
-            />
-            <button
-              onClick={handleAddNote}
-              disabled={!newNote.trim()}
-              className="mt-2 w-full py-2 bg-warm-600 hover:bg-warm-700 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-lg transition-colors"
-            >
-              添加笔记
-            </button>
+            {!isAuthenticated ? (
+              <div className="text-center py-4 text-warm-500 dark:text-warm-400">
+                <p>登录后可保存笔记到云端</p>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="记录你的学习心得..."
+                  className="w-full p-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 placeholder-warm-400 dark:placeholder-warm-500 resize-none focus:outline-none focus:ring-2 focus:ring-warm-500"
+                  rows={3}
+                />
+                <button
+                  onClick={handleAddNote}
+                  disabled={!newNote.trim()}
+                  className="mt-2 w-full py-2 bg-warm-600 hover:bg-warm-700 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-lg transition-colors"
+                >
+                  添加笔记
+                </button>
+              </>
+            )}
           </div>
 
           {/* 笔记列表 */}
           <div className="p-4 overflow-y-auto max-h-[40vh]">
-            {filteredNotes.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-warm-200 border-t-warm-600 rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : filteredNotes.length === 0 ? (
               <div className="text-center py-8 text-warm-400 dark:text-warm-500">
                 <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

@@ -2,6 +2,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.7.1',
+    date: '2025-12-23',
+    highlighted: true,
+    highlightLabel: '数据云端化',
+    changes: [
+      { type: 'feature', text: '所有用户数据云端存储 - 笔记、收藏、打卡、错题、成就等' },
+      { type: 'feature', text: '学习数据中心显示真实统计数据' },
+      { type: 'improve', text: '环境音效升级为真实音频（雨声、森林、海浪等）' },
+      { type: 'improve', text: '音效支持多源备用，确保播放稳定' },
+      { type: 'fix', text: '修复学习数据中心硬编码假数据问题' },
+      { type: 'fix', text: '修复提醒设置未保存到云端问题' }
+    ]
+  },
+  {
     version: 'v1.7.0',
     date: '2025-12-23',
     highlighted: true,

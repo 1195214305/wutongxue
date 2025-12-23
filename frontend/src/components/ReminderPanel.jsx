@@ -1,27 +1,55 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
-const STORAGE_KEY = 'wutongxue_reminder'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function ReminderPanel({ isOpen, onClose }) {
+  const { token, isAuthenticated } = useAuth()
   const [reminderEnabled, setReminderEnabled] = useState(false)
   const [reminderTime, setReminderTime] = useState('20:00')
   const [notificationPermission, setNotificationPermission] = useState('default')
+  const [isLoading, setIsLoading] = useState(false)
 
   // 加载设置
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const settings = JSON.parse(saved)
-      setReminderEnabled(settings.enabled)
-      setReminderTime(settings.time)
+    if (isOpen && isAuthenticated) {
+      fetchReminder()
+    } else if (isOpen) {
+      // 未登录时从 localStorage 加载
+      const saved = localStorage.getItem('wutongxue_reminder')
+      if (saved) {
+        const settings = JSON.parse(saved)
+        setReminderEnabled(settings.enabled)
+        setReminderTime(settings.time)
+      }
     }
 
     // 检查通知权限
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission)
     }
-  }, [isOpen])
+  }, [isOpen, isAuthenticated])
+
+  const fetchReminder = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/api/reminders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.reminder) {
+          setReminderEnabled(data.reminder.enabled === 1)
+          setReminderTime(data.reminder.time)
+        }
+      }
+    } catch (error) {
+      console.error('获取提醒设置失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // 请求通知权限
   const requestPermission = async () => {
@@ -34,9 +62,7 @@ function ReminderPanel({ isOpen, onClose }) {
   }
 
   // 保存设置
-  const saveSettings = (enabled, time) => {
-    const settings = { enabled, time }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+  const saveSettings = async (enabled, time) => {
     setReminderEnabled(enabled)
     setReminderTime(time)
 
@@ -44,6 +70,25 @@ function ReminderPanel({ isOpen, onClose }) {
       scheduleReminder(time)
     } else {
       cancelReminder()
+    }
+
+    // 保存到服务器或本地
+    if (isAuthenticated) {
+      try {
+        await fetch(`${API_BASE}/api/reminders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ enabled, time })
+        })
+      } catch (error) {
+        console.error('保存提醒设置失败:', error)
+      }
+    } else {
+      // 未登录时保存到 localStorage
+      localStorage.setItem('wutongxue_reminder', JSON.stringify({ enabled, time }))
     }
   }
 

@@ -1,37 +1,81 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
-const STORAGE_KEY = 'wutongxue_favorites'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function FavoritesPanel({ isOpen, onClose }) {
+  const { token, isAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTag, setSelectedTag] = useState('all')
+  const [isLoading, setIsLoading] = useState(false)
 
   // 加载收藏
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      setFavorites(JSON.parse(saved))
+    if (isOpen && isAuthenticated) {
+      fetchFavorites()
     }
-  }, [isOpen])
+  }, [isOpen, isAuthenticated])
 
-  // 保存收藏
-  const saveFavorites = (newFavorites) => {
-    setFavorites(newFavorites)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites))
+  const fetchFavorites = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/api/favorites`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setFavorites(data.favorites.map(f => ({
+          id: f.id,
+          content: f.content,
+          sessionId: f.session_id,
+          fileName: f.file_name,
+          tag: f.tag,
+          createdAt: f.created_at
+        })))
+      }
+    } catch (error) {
+      console.error('获取收藏失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // 删除收藏
-  const handleDelete = (id) => {
-    saveFavorites(favorites.filter(f => f.id !== id))
+  const handleDelete = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/favorites/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        setFavorites(favorites.filter(f => f.id !== id))
+      }
+    } catch (error) {
+      console.error('删除收藏失败:', error)
+    }
   }
 
   // 更新标签
-  const handleUpdateTag = (id, tag) => {
-    saveFavorites(favorites.map(f =>
-      f.id === id ? { ...f, tag } : f
-    ))
+  const handleUpdateTag = async (id, tag) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/favorites/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ tag })
+      })
+      if (response.ok) {
+        setFavorites(favorites.map(f =>
+          f.id === id ? { ...f, tag } : f
+        ))
+      }
+    } catch (error) {
+      console.error('更新标签失败:', error)
+    }
   }
 
   // 获取所有标签
@@ -176,7 +220,19 @@ function FavoritesPanel({ isOpen, onClose }) {
 
           {/* 收藏列表 */}
           <div className="p-4 overflow-y-auto max-h-[60vh]">
-            {filteredFavorites.length === 0 ? (
+            {!isAuthenticated ? (
+              <div className="text-center py-12 text-warm-400 dark:text-warm-500">
+                <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p className="text-lg">登录后可使用收藏功能</p>
+                <p className="text-sm mt-2">您的收藏将安全存储在云端</p>
+              </div>
+            ) : isLoading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-warm-200 border-t-warm-600 rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : filteredFavorites.length === 0 ? (
               <div className="text-center py-12 text-warm-400 dark:text-warm-500">
                 <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -250,21 +306,34 @@ function FavoritesPanel({ isOpen, onClose }) {
 }
 
 // 添加收藏的辅助函数
-export const addToFavorites = (content, fileName, sessionId) => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  const favorites = saved ? JSON.parse(saved) : []
-
-  const newFavorite = {
-    id: Date.now().toString(),
-    content,
-    fileName,
-    sessionId,
-    tag: '',
-    createdAt: Date.now()
+export const addToFavorites = async (content, fileName, sessionId, token) => {
+  if (!token) {
+    alert('请先登录后再收藏')
+    return false
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([newFavorite, ...favorites]))
-  return true
+  try {
+    const response = await fetch(`${API_BASE}/api/favorites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        content,
+        fileName,
+        sessionId
+      })
+    })
+
+    if (response.ok) {
+      return true
+    }
+    return false
+  } catch (error) {
+    console.error('收藏失败:', error)
+    return false
+  }
 }
 
 export default FavoritesPanel

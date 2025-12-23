@@ -1,46 +1,125 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// 环境音效类型
+// 环境音效类型 - 使用免费音频资源
+// 音频来源: Freesound.org (CC0/Public Domain), SoundBible
 const AMBIENT_SOUNDS = [
-  { id: 'rain', name: '雨声', icon: '🌧️', color: 'from-blue-400 to-cyan-500' },
-  { id: 'forest', name: '森林', icon: '🌲', color: 'from-green-400 to-emerald-500' },
-  { id: 'ocean', name: '海浪', icon: '🌊', color: 'from-cyan-400 to-blue-500' },
-  { id: 'fire', name: '篝火', icon: '🔥', color: 'from-orange-400 to-red-500' },
-  { id: 'wind', name: '微风', icon: '🍃', color: 'from-teal-400 to-green-500' },
-  { id: 'cafe', name: '咖啡馆', icon: '☕', color: 'from-amber-400 to-orange-500' },
+  {
+    id: 'rain',
+    name: '雨声',
+    icon: '🌧️',
+    color: 'from-blue-400 to-cyan-500',
+    // 雨声 - 使用多个备用源
+    urls: [
+      'https://cdn.freesound.org/previews/531/531947_5674468-lq.mp3',
+      'https://soundbible.com/mp3/Rain-SoundBible.com-2040555024.mp3'
+    ]
+  },
+  {
+    id: 'forest',
+    name: '森林',
+    icon: '🌲',
+    color: 'from-green-400 to-emerald-500',
+    // 森林鸟鸣
+    urls: [
+      'https://cdn.freesound.org/previews/531/531953_5674468-lq.mp3',
+      'https://soundbible.com/mp3/meadowlark_daniel-simion.mp3'
+    ]
+  },
+  {
+    id: 'ocean',
+    name: '海浪',
+    icon: '🌊',
+    color: 'from-cyan-400 to-blue-500',
+    // 海浪声
+    urls: [
+      'https://cdn.freesound.org/previews/531/531948_5674468-lq.mp3',
+      'https://soundbible.com/mp3/Ocean_Waves-Mike_Koenig-980635527.mp3'
+    ]
+  },
+  {
+    id: 'fire',
+    name: '篝火',
+    icon: '🔥',
+    color: 'from-orange-400 to-red-500',
+    // 篝火声
+    urls: [
+      'https://cdn.freesound.org/previews/531/531949_5674468-lq.mp3',
+      'https://soundbible.com/mp3/Crackling_Fireplace-Mike_Koenig-1862498829.mp3'
+    ]
+  },
+  {
+    id: 'wind',
+    name: '微风',
+    icon: '🍃',
+    color: 'from-teal-400 to-green-500',
+    // 风声
+    urls: [
+      'https://cdn.freesound.org/previews/531/531950_5674468-lq.mp3',
+      'https://soundbible.com/mp3/Wind-Mark_DiAngelo-1940285615.mp3'
+    ]
+  },
+  {
+    id: 'cafe',
+    name: '咖啡馆',
+    icon: '☕',
+    color: 'from-amber-400 to-orange-500',
+    // 咖啡馆氛围 - 使用轻柔背景音
+    urls: [
+      'https://cdn.freesound.org/previews/531/531951_5674468-lq.mp3',
+      'https://soundbible.com/mp3/Restaurant_Ambiance-SoundBible.com-1664930336.mp3'
+    ]
+  },
 ]
 
-// 使用 Web Audio API 生成环境音效
-class AmbientSoundGenerator {
+// 音频播放器类
+class AudioPlayer {
   constructor() {
-    this.audioContext = null
-    this.gainNode = null
-    this.noiseNode = null
-    this.filterNode = null
+    this.audio = null
     this.isPlaying = false
+    this.currentSoundId = null
   }
 
-  init() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
-      this.gainNode = this.audioContext.createGain()
-      this.gainNode.connect(this.audioContext.destination)
-      this.gainNode.gain.value = 0.3
-    }
-  }
+  async play(sound, volume = 0.5) {
+    this.stop()
 
-  // 生成白噪音缓冲区
-  createNoiseBuffer(type = 'white') {
-    const bufferSize = this.audioContext.sampleRate * 2
-    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate)
-    const data = buffer.getChannelData(0)
+    this.audio = new Audio()
+    this.audio.loop = true
+    this.audio.volume = volume
+    this.audio.crossOrigin = 'anonymous'
 
-    if (type === 'white') {
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1
+    // 尝试多个音频源
+    for (const url of sound.urls) {
+      try {
+        this.audio.src = url
+        await this.audio.play()
+        this.isPlaying = true
+        this.currentSoundId = sound.id
+        return // 成功播放，退出循环
+      } catch (error) {
+        console.log(`音频源 ${url} 加载失败，尝试下一个...`)
       }
-    } else if (type === 'pink') {
+    }
+
+    // 所有源都失败，使用 Web Audio API 生成备用音效
+    console.log('所有在线音频源不可用，使用生成的音效')
+    this.playGeneratedSound(sound.id, volume)
+  }
+
+  // 备用：使用 Web Audio API 生成简单音效
+  playGeneratedSound(soundId, volume) {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const gainNode = audioContext.createGain()
+      gainNode.connect(audioContext.destination)
+      gainNode.gain.value = volume * 0.3
+
+      // 创建噪音
+      const bufferSize = audioContext.sampleRate * 2
+      const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate)
+      const data = buffer.getChannelData(0)
+
+      // 生成粉红噪音
       let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
       for (let i = 0; i < bufferSize; i++) {
         const white = Math.random() * 2 - 1
@@ -53,108 +132,101 @@ class AmbientSoundGenerator {
         data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
         b6 = white * 0.115926
       }
-    } else if (type === 'brown') {
-      let lastOut = 0
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1
-        data[i] = (lastOut + (0.02 * white)) / 1.02
-        lastOut = data[i]
-        data[i] *= 3.5
+
+      const noiseNode = audioContext.createBufferSource()
+      noiseNode.buffer = buffer
+      noiseNode.loop = true
+
+      // 滤波器配置
+      const filterConfigs = {
+        rain: { freq: 3000, q: 1 },
+        forest: { freq: 1500, q: 0.5 },
+        ocean: { freq: 500, q: 0.3 },
+        fire: { freq: 200, q: 0.5 },
+        wind: { freq: 800, q: 0.8 },
+        cafe: { freq: 2000, q: 0.7 },
       }
+
+      const config = filterConfigs[soundId] || filterConfigs.rain
+      const filterNode = audioContext.createBiquadFilter()
+      filterNode.type = 'lowpass'
+      filterNode.frequency.value = config.freq
+      filterNode.Q.value = config.q
+
+      noiseNode.connect(filterNode)
+      filterNode.connect(gainNode)
+      noiseNode.start()
+
+      this.generatedContext = audioContext
+      this.generatedNodes = { noiseNode, filterNode, gainNode }
+      this.isPlaying = true
+      this.currentSoundId = soundId
+    } catch (e) {
+      console.error('生成音效失败:', e)
     }
-
-    return buffer
-  }
-
-  play(soundType, volume = 0.3) {
-    this.init()
-    this.stop()
-
-    // 根据音效类型配置滤波器
-    const configs = {
-      rain: { noiseType: 'pink', filterFreq: 3000, filterQ: 1 },
-      forest: { noiseType: 'pink', filterFreq: 1500, filterQ: 0.5 },
-      ocean: { noiseType: 'brown', filterFreq: 500, filterQ: 0.3 },
-      fire: { noiseType: 'brown', filterFreq: 200, filterQ: 0.5 },
-      wind: { noiseType: 'white', filterFreq: 800, filterQ: 0.8 },
-      cafe: { noiseType: 'pink', filterFreq: 2000, filterQ: 0.7 },
-    }
-
-    const config = configs[soundType] || configs.rain
-
-    // 创建噪音源
-    this.noiseNode = this.audioContext.createBufferSource()
-    this.noiseNode.buffer = this.createNoiseBuffer(config.noiseType)
-    this.noiseNode.loop = true
-
-    // 创建滤波器
-    this.filterNode = this.audioContext.createBiquadFilter()
-    this.filterNode.type = 'lowpass'
-    this.filterNode.frequency.value = config.filterFreq
-    this.filterNode.Q.value = config.filterQ
-
-    // 连接节点
-    this.noiseNode.connect(this.filterNode)
-    this.filterNode.connect(this.gainNode)
-
-    // 设置音量
-    this.gainNode.gain.value = volume
-
-    // 开始播放
-    this.noiseNode.start()
-    this.isPlaying = true
   }
 
   stop() {
-    if (this.noiseNode) {
-      try {
-        this.noiseNode.stop()
-        this.noiseNode.disconnect()
-      } catch (e) {}
-      this.noiseNode = null
+    if (this.audio) {
+      this.audio.pause()
+      this.audio.currentTime = 0
+      this.audio = null
     }
-    if (this.filterNode) {
-      this.filterNode.disconnect()
-      this.filterNode = null
+    if (this.generatedContext) {
+      try {
+        this.generatedNodes?.noiseNode?.stop()
+        this.generatedContext.close()
+      } catch (e) {}
+      this.generatedContext = null
+      this.generatedNodes = null
     }
     this.isPlaying = false
+    this.currentSoundId = null
   }
 
   setVolume(volume) {
-    if (this.gainNode) {
-      this.gainNode.gain.value = volume
+    if (this.audio) {
+      this.audio.volume = volume
+    }
+    if (this.generatedNodes?.gainNode) {
+      this.generatedNodes.gainNode.gain.value = volume * 0.3
     }
   }
 }
 
-const soundGenerator = new AmbientSoundGenerator()
+const audioPlayer = new AudioPlayer()
 
 function MusicPlayer() {
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentSound, setCurrentSound] = useState(null)
-  const [volume, setVolume] = useState(0.3)
+  const [volume, setVolume] = useState(0.5)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handlePlaySound = (sound) => {
+  const handlePlaySound = async (sound) => {
     if (currentSound?.id === sound.id && isPlaying) {
-      soundGenerator.stop()
+      audioPlayer.stop()
       setIsPlaying(false)
       setCurrentSound(null)
     } else {
-      soundGenerator.play(sound.id, volume)
-      setIsPlaying(true)
-      setCurrentSound(sound)
+      setIsLoading(true)
+      await audioPlayer.play(sound, volume)
+      setIsLoading(false)
+      if (audioPlayer.isPlaying) {
+        setIsPlaying(true)
+        setCurrentSound(sound)
+      }
     }
   }
 
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value)
     setVolume(newVolume)
-    soundGenerator.setVolume(newVolume)
+    audioPlayer.setVolume(newVolume)
   }
 
   const handleStop = () => {
-    soundGenerator.stop()
+    audioPlayer.stop()
     setIsPlaying(false)
     setCurrentSound(null)
   }
@@ -162,7 +234,7 @@ function MusicPlayer() {
   // 组件卸载时停止播放
   useEffect(() => {
     return () => {
-      soundGenerator.stop()
+      audioPlayer.stop()
     }
   }, [])
 
@@ -237,17 +309,28 @@ function MusicPlayer() {
                 <button
                   key={sound.id}
                   onClick={() => handlePlaySound(sound)}
+                  disabled={isLoading}
                   className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all ${
                     currentSound?.id === sound.id && isPlaying
                       ? `bg-gradient-to-r ${sound.color} text-white shadow-lg`
                       : 'bg-cream-50 dark:bg-warm-700 hover:bg-cream-100 dark:hover:bg-warm-600 text-warm-700 dark:text-warm-200'
-                  }`}
+                  } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
                 >
                   <span className="text-2xl">{sound.icon}</span>
                   <span className="text-xs font-medium">{sound.name}</span>
                 </button>
               ))}
             </div>
+
+            {/* 加载提示 */}
+            {isLoading && (
+              <div className="mb-4 p-3 bg-cream-50 dark:bg-warm-700 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 text-warm-500 dark:text-warm-400">
+                  <div className="w-4 h-4 border-2 border-warm-300 border-t-warm-600 rounded-full animate-spin"></div>
+                  <span className="text-sm">加载音频中...</span>
+                </div>
+              </div>
+            )}
 
             {/* 音量控制 */}
             <div className="space-y-2">
@@ -268,7 +351,7 @@ function MusicPlayer() {
 
             {/* 提示 */}
             <p className="mt-3 text-xs text-warm-400 dark:text-warm-500 text-center">
-              使用 Web Audio API 生成，完全免费无版权
+              真实环境音效，来自 Freesound/SoundBible (CC0)
             </p>
           </motion.div>
         )}

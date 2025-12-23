@@ -9,6 +9,7 @@ const db = createClient({
 // 初始化数据库表
 async function initDatabase() {
   try {
+    // 用户表
     await db.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -20,6 +21,7 @@ async function initDatabase() {
       )
     `);
 
+    // 学习会话表
     await db.execute(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
@@ -34,6 +36,7 @@ async function initDatabase() {
       )
     `);
 
+    // 消息表
     await db.execute(`
       CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,8 +48,130 @@ async function initDatabase() {
       )
     `);
 
+    // 学习笔记表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        session_id TEXT,
+        file_name TEXT,
+        content TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 知识点收藏表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        session_id TEXT,
+        file_name TEXT,
+        content TEXT NOT NULL,
+        tag TEXT,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 学习目标表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'daily',
+        target_minutes INTEGER DEFAULT 30,
+        completed INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 打卡记录表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS checkins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        checkin_date TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        UNIQUE(user_id, checkin_date),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 错题本表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS wrong_questions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        session_id TEXT,
+        file_name TEXT,
+        question TEXT NOT NULL,
+        options TEXT NOT NULL,
+        correct_index INTEGER NOT NULL,
+        user_answer INTEGER NOT NULL,
+        explanation TEXT,
+        mastered INTEGER DEFAULT 0,
+        retry_count INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        last_retry INTEGER,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 学习成就表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        achievement_id TEXT NOT NULL,
+        unlocked_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        UNIQUE(user_id, achievement_id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 学习统计表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS learning_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        stat_date TEXT NOT NULL,
+        learning_time INTEGER DEFAULT 0,
+        session_count INTEGER DEFAULT 0,
+        quiz_count INTEGER DEFAULT 0,
+        correct_count INTEGER DEFAULT 0,
+        total_questions INTEGER DEFAULT 0,
+        UNIQUE(user_id, stat_date),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 学习提醒设置表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS reminders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT UNIQUE NOT NULL,
+        enabled INTEGER DEFAULT 0,
+        reminder_time TEXT DEFAULT '20:00',
+        updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 创建索引
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_checkins_user_id ON checkins(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_wrong_questions_user_id ON wrong_questions(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
 
     console.log('Turso 数据库初始化成功');
   } catch (error) {

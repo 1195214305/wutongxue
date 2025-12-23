@@ -719,6 +719,583 @@ app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
   }
 });
 
+// ==================== 学习笔记接口 ====================
+
+// 获取用户笔记列表
+app.get('/api/notes', authenticateToken, async (req, res) => {
+  try {
+    const notes = await db.all(
+      `SELECT * FROM notes WHERE user_id = ? ORDER BY updated_at DESC`,
+      [req.user.id]
+    );
+    res.json({ success: true, notes });
+  } catch (error) {
+    console.error('获取笔记错误:', error);
+    res.status(500).json({ error: '获取笔记失败' });
+  }
+});
+
+// 创建笔记
+app.post('/api/notes', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId, fileName, content } = req.body;
+    const noteId = uuidv4();
+    const now = Date.now();
+
+    await db.run(
+      `INSERT INTO notes (id, user_id, session_id, file_name, content, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [noteId, req.user.id, sessionId || null, fileName || null, content, now, now]
+    );
+
+    res.json({ success: true, noteId, message: '笔记保存成功' });
+  } catch (error) {
+    console.error('创建笔记错误:', error);
+    res.status(500).json({ error: '保存笔记失败' });
+  }
+});
+
+// 更新笔记
+app.put('/api/notes/:noteId', authenticateToken, async (req, res) => {
+  try {
+    const { noteId } = req.params;
+    const { content } = req.body;
+
+    const note = await db.get('SELECT id FROM notes WHERE id = ? AND user_id = ?', [noteId, req.user.id]);
+    if (!note) {
+      return res.status(404).json({ error: '笔记不存在' });
+    }
+
+    await db.run(
+      'UPDATE notes SET content = ?, updated_at = ? WHERE id = ?',
+      [content, Date.now(), noteId]
+    );
+
+    res.json({ success: true, message: '笔记更新成功' });
+  } catch (error) {
+    console.error('更新笔记错误:', error);
+    res.status(500).json({ error: '更新笔记失败' });
+  }
+});
+
+// 删除笔记
+app.delete('/api/notes/:noteId', authenticateToken, async (req, res) => {
+  try {
+    const { noteId } = req.params;
+
+    const note = await db.get('SELECT id FROM notes WHERE id = ? AND user_id = ?', [noteId, req.user.id]);
+    if (!note) {
+      return res.status(404).json({ error: '笔记不存在' });
+    }
+
+    await db.run('DELETE FROM notes WHERE id = ?', [noteId]);
+    res.json({ success: true, message: '笔记删除成功' });
+  } catch (error) {
+    console.error('删除笔记错误:', error);
+    res.status(500).json({ error: '删除笔记失败' });
+  }
+});
+
+// ==================== 知识收藏接口 ====================
+
+// 获取用户收藏列表
+app.get('/api/favorites', authenticateToken, async (req, res) => {
+  try {
+    const favorites = await db.all(
+      `SELECT * FROM favorites WHERE user_id = ? ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ success: true, favorites });
+  } catch (error) {
+    console.error('获取收藏错误:', error);
+    res.status(500).json({ error: '获取收藏失败' });
+  }
+});
+
+// 添加收藏
+app.post('/api/favorites', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId, fileName, content, tag } = req.body;
+    const favoriteId = uuidv4();
+
+    await db.run(
+      `INSERT INTO favorites (id, user_id, session_id, file_name, content, tag, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [favoriteId, req.user.id, sessionId || null, fileName || null, content, tag || null, Date.now()]
+    );
+
+    res.json({ success: true, favoriteId, message: '收藏成功' });
+  } catch (error) {
+    console.error('添加收藏错误:', error);
+    res.status(500).json({ error: '收藏失败' });
+  }
+});
+
+// 更新收藏标签
+app.put('/api/favorites/:favoriteId', authenticateToken, async (req, res) => {
+  try {
+    const { favoriteId } = req.params;
+    const { tag, content } = req.body;
+
+    const favorite = await db.get('SELECT id FROM favorites WHERE id = ? AND user_id = ?', [favoriteId, req.user.id]);
+    if (!favorite) {
+      return res.status(404).json({ error: '收藏不存在' });
+    }
+
+    if (content !== undefined) {
+      await db.run('UPDATE favorites SET content = ?, tag = ? WHERE id = ?', [content, tag, favoriteId]);
+    } else {
+      await db.run('UPDATE favorites SET tag = ? WHERE id = ?', [tag, favoriteId]);
+    }
+
+    res.json({ success: true, message: '更新成功' });
+  } catch (error) {
+    console.error('更新收藏错误:', error);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
+// 删除收藏
+app.delete('/api/favorites/:favoriteId', authenticateToken, async (req, res) => {
+  try {
+    const { favoriteId } = req.params;
+
+    const favorite = await db.get('SELECT id FROM favorites WHERE id = ? AND user_id = ?', [favoriteId, req.user.id]);
+    if (!favorite) {
+      return res.status(404).json({ error: '收藏不存在' });
+    }
+
+    await db.run('DELETE FROM favorites WHERE id = ?', [favoriteId]);
+    res.json({ success: true, message: '删除成功' });
+  } catch (error) {
+    console.error('删除收藏错误:', error);
+    res.status(500).json({ error: '删除失败' });
+  }
+});
+
+// ==================== 学习目标接口 ====================
+
+// 获取用户目标
+app.get('/api/goals', authenticateToken, async (req, res) => {
+  try {
+    const goals = await db.all(
+      `SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ success: true, goals });
+  } catch (error) {
+    console.error('获取目标错误:', error);
+    res.status(500).json({ error: '获取目标失败' });
+  }
+});
+
+// 创建/更新目标
+app.post('/api/goals', authenticateToken, async (req, res) => {
+  try {
+    const { content, type, targetMinutes } = req.body;
+    const goalId = uuidv4();
+
+    await db.run(
+      `INSERT INTO goals (id, user_id, content, type, target_minutes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [goalId, req.user.id, content, type || 'daily', targetMinutes || 30, Date.now()]
+    );
+
+    res.json({ success: true, goalId, message: '目标设置成功' });
+  } catch (error) {
+    console.error('创建目标错误:', error);
+    res.status(500).json({ error: '设置目标失败' });
+  }
+});
+
+// 更新目标完成状态
+app.put('/api/goals/:goalId', authenticateToken, async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const { completed, content, targetMinutes } = req.body;
+
+    const goal = await db.get('SELECT id FROM goals WHERE id = ? AND user_id = ?', [goalId, req.user.id]);
+    if (!goal) {
+      return res.status(404).json({ error: '目标不存在' });
+    }
+
+    if (completed !== undefined) {
+      await db.run('UPDATE goals SET completed = ? WHERE id = ?', [completed ? 1 : 0, goalId]);
+    }
+    if (content !== undefined) {
+      await db.run('UPDATE goals SET content = ? WHERE id = ?', [content, goalId]);
+    }
+    if (targetMinutes !== undefined) {
+      await db.run('UPDATE goals SET target_minutes = ? WHERE id = ?', [targetMinutes, goalId]);
+    }
+
+    res.json({ success: true, message: '目标更新成功' });
+  } catch (error) {
+    console.error('更新目标错误:', error);
+    res.status(500).json({ error: '更新目标失败' });
+  }
+});
+
+// 删除目标
+app.delete('/api/goals/:goalId', authenticateToken, async (req, res) => {
+  try {
+    const { goalId } = req.params;
+
+    const goal = await db.get('SELECT id FROM goals WHERE id = ? AND user_id = ?', [goalId, req.user.id]);
+    if (!goal) {
+      return res.status(404).json({ error: '目标不存在' });
+    }
+
+    await db.run('DELETE FROM goals WHERE id = ?', [goalId]);
+    res.json({ success: true, message: '目标删除成功' });
+  } catch (error) {
+    console.error('删除目标错误:', error);
+    res.status(500).json({ error: '删除目标失败' });
+  }
+});
+
+// ==================== 打卡记录接口 ====================
+
+// 获取用户打卡记录
+app.get('/api/checkins', authenticateToken, async (req, res) => {
+  try {
+    const checkins = await db.all(
+      `SELECT * FROM checkins WHERE user_id = ? ORDER BY checkin_date DESC LIMIT 365`,
+      [req.user.id]
+    );
+    res.json({ success: true, checkins });
+  } catch (error) {
+    console.error('获取打卡记录错误:', error);
+    res.status(500).json({ error: '获取打卡记录失败' });
+  }
+});
+
+// 今日打卡
+app.post('/api/checkins', authenticateToken, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // 检查今天是否已打卡
+    const existing = await db.get(
+      'SELECT id FROM checkins WHERE user_id = ? AND checkin_date = ?',
+      [req.user.id, today]
+    );
+
+    if (existing) {
+      return res.json({ success: true, message: '今日已打卡', alreadyChecked: true });
+    }
+
+    await db.run(
+      `INSERT INTO checkins (user_id, checkin_date, created_at) VALUES (?, ?, ?)`,
+      [req.user.id, today, Date.now()]
+    );
+
+    // 计算连续打卡天数
+    const checkins = await db.all(
+      `SELECT checkin_date FROM checkins WHERE user_id = ? ORDER BY checkin_date DESC`,
+      [req.user.id]
+    );
+
+    let streak = 1;
+    for (let i = 1; i < checkins.length; i++) {
+      const prevDate = new Date(checkins[i - 1].checkin_date);
+      const currDate = new Date(checkins[i].checkin_date);
+      const diffDays = (prevDate - currDate) / (1000 * 60 * 60 * 24);
+      if (diffDays === 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    res.json({ success: true, message: '打卡成功', streak });
+  } catch (error) {
+    console.error('打卡错误:', error);
+    res.status(500).json({ error: '打卡失败' });
+  }
+});
+
+// ==================== 错题本接口 ====================
+
+// 获取用户错题
+app.get('/api/wrong-questions', authenticateToken, async (req, res) => {
+  try {
+    const questions = await db.all(
+      `SELECT * FROM wrong_questions WHERE user_id = ? ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ success: true, questions });
+  } catch (error) {
+    console.error('获取错题错误:', error);
+    res.status(500).json({ error: '获取错题失败' });
+  }
+});
+
+// 添加错题
+app.post('/api/wrong-questions', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId, fileName, question, options, correctIndex, userAnswer, explanation } = req.body;
+    const questionId = uuidv4();
+
+    await db.run(
+      `INSERT INTO wrong_questions (id, user_id, session_id, file_name, question, options, correct_index, user_answer, explanation, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [questionId, req.user.id, sessionId || null, fileName || null, question, JSON.stringify(options), correctIndex, userAnswer, explanation || null, Date.now()]
+    );
+
+    res.json({ success: true, questionId, message: '错题已记录' });
+  } catch (error) {
+    console.error('添加错题错误:', error);
+    res.status(500).json({ error: '记录错题失败' });
+  }
+});
+
+// 更新错题状态（重做/标记掌握）
+app.put('/api/wrong-questions/:questionId', authenticateToken, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { mastered, retryCount } = req.body;
+
+    const question = await db.get('SELECT id FROM wrong_questions WHERE id = ? AND user_id = ?', [questionId, req.user.id]);
+    if (!question) {
+      return res.status(404).json({ error: '错题不存在' });
+    }
+
+    if (mastered !== undefined) {
+      await db.run('UPDATE wrong_questions SET mastered = ? WHERE id = ?', [mastered ? 1 : 0, questionId]);
+    }
+    if (retryCount !== undefined) {
+      await db.run('UPDATE wrong_questions SET retry_count = ?, last_retry = ? WHERE id = ?', [retryCount, Date.now(), questionId]);
+    }
+
+    res.json({ success: true, message: '更新成功' });
+  } catch (error) {
+    console.error('更新错题错误:', error);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
+// 删除错题
+app.delete('/api/wrong-questions/:questionId', authenticateToken, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+    const question = await db.get('SELECT id FROM wrong_questions WHERE id = ? AND user_id = ?', [questionId, req.user.id]);
+    if (!question) {
+      return res.status(404).json({ error: '错题不存在' });
+    }
+
+    await db.run('DELETE FROM wrong_questions WHERE id = ?', [questionId]);
+    res.json({ success: true, message: '删除成功' });
+  } catch (error) {
+    console.error('删除错题错误:', error);
+    res.status(500).json({ error: '删除失败' });
+  }
+});
+
+// ==================== 学习成就接口 ====================
+
+// 获取用户成就
+app.get('/api/achievements', authenticateToken, async (req, res) => {
+  try {
+    const achievements = await db.all(
+      `SELECT * FROM achievements WHERE user_id = ? ORDER BY unlocked_at DESC`,
+      [req.user.id]
+    );
+    res.json({ success: true, achievements });
+  } catch (error) {
+    console.error('获取成就错误:', error);
+    res.status(500).json({ error: '获取成就失败' });
+  }
+});
+
+// 解锁成就
+app.post('/api/achievements', authenticateToken, async (req, res) => {
+  try {
+    const { achievementId } = req.body;
+
+    // 检查是否已解锁
+    const existing = await db.get(
+      'SELECT id FROM achievements WHERE user_id = ? AND achievement_id = ?',
+      [req.user.id, achievementId]
+    );
+
+    if (existing) {
+      return res.json({ success: true, message: '成就已解锁', alreadyUnlocked: true });
+    }
+
+    await db.run(
+      `INSERT INTO achievements (user_id, achievement_id, unlocked_at) VALUES (?, ?, ?)`,
+      [req.user.id, achievementId, Date.now()]
+    );
+
+    res.json({ success: true, message: '成就解锁成功' });
+  } catch (error) {
+    console.error('解锁成就错误:', error);
+    res.status(500).json({ error: '解锁成就失败' });
+  }
+});
+
+// ==================== 学习统计接口 ====================
+
+// 获取用户学习统计
+app.get('/api/learning-stats', authenticateToken, async (req, res) => {
+  try {
+    // 获取最近30天的统计
+    const stats = await db.all(
+      `SELECT * FROM learning_stats WHERE user_id = ? ORDER BY stat_date DESC LIMIT 30`,
+      [req.user.id]
+    );
+
+    // 获取总体统计
+    const totalStats = await db.get(
+      `SELECT
+        SUM(learning_time) as total_time,
+        SUM(session_count) as total_sessions,
+        SUM(quiz_count) as total_quizzes,
+        SUM(correct_count) as total_correct,
+        SUM(total_questions) as total_questions
+      FROM learning_stats WHERE user_id = ?`,
+      [req.user.id]
+    );
+
+    // 获取场景分布
+    const scenarioStats = await db.all(
+      `SELECT scenario, COUNT(*) as count FROM sessions WHERE user_id = ? AND scenario IS NOT NULL GROUP BY scenario`,
+      [req.user.id]
+    );
+
+    // 获取连续学习天数
+    const checkins = await db.all(
+      `SELECT checkin_date FROM checkins WHERE user_id = ? ORDER BY checkin_date DESC`,
+      [req.user.id]
+    );
+
+    let streak = 0;
+    if (checkins.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      if (checkins[0].checkin_date === today || checkins[0].checkin_date === yesterday) {
+        streak = 1;
+        for (let i = 1; i < checkins.length; i++) {
+          const prevDate = new Date(checkins[i - 1].checkin_date);
+          const currDate = new Date(checkins[i].checkin_date);
+          const diffDays = (prevDate - currDate) / (1000 * 60 * 60 * 24);
+          if (diffDays === 1) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      dailyStats: stats,
+      totalStats: {
+        totalTime: totalStats?.total_time || 0,
+        totalSessions: totalStats?.total_sessions || 0,
+        totalQuizzes: totalStats?.total_quizzes || 0,
+        totalCorrect: totalStats?.total_correct || 0,
+        totalQuestions: totalStats?.total_questions || 0,
+        accuracy: totalStats?.total_questions > 0
+          ? Math.round((totalStats.total_correct / totalStats.total_questions) * 100)
+          : 0
+      },
+      scenarioStats,
+      streak
+    });
+  } catch (error) {
+    console.error('获取学习统计错误:', error);
+    res.status(500).json({ error: '获取学习统计失败' });
+  }
+});
+
+// 更新今日学习统计
+app.post('/api/learning-stats', authenticateToken, async (req, res) => {
+  try {
+    const { learningTime, sessionCount, quizCount, correctCount, totalQuestions } = req.body;
+    const today = new Date().toISOString().split('T')[0];
+
+    // 检查今天是否已有记录
+    const existing = await db.get(
+      'SELECT * FROM learning_stats WHERE user_id = ? AND stat_date = ?',
+      [req.user.id, today]
+    );
+
+    if (existing) {
+      // 更新现有记录
+      await db.run(
+        `UPDATE learning_stats SET
+          learning_time = learning_time + ?,
+          session_count = session_count + ?,
+          quiz_count = quiz_count + ?,
+          correct_count = correct_count + ?,
+          total_questions = total_questions + ?
+        WHERE user_id = ? AND stat_date = ?`,
+        [learningTime || 0, sessionCount || 0, quizCount || 0, correctCount || 0, totalQuestions || 0, req.user.id, today]
+      );
+    } else {
+      // 创建新记录
+      await db.run(
+        `INSERT INTO learning_stats (user_id, stat_date, learning_time, session_count, quiz_count, correct_count, total_questions)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [req.user.id, today, learningTime || 0, sessionCount || 0, quizCount || 0, correctCount || 0, totalQuestions || 0]
+      );
+    }
+
+    res.json({ success: true, message: '统计更新成功' });
+  } catch (error) {
+    console.error('更新学习统计错误:', error);
+    res.status(500).json({ error: '更新统计失败' });
+  }
+});
+
+// ==================== 学习提醒接口 ====================
+
+// 获取用户提醒设置
+app.get('/api/reminders', authenticateToken, async (req, res) => {
+  try {
+    const reminder = await db.get(
+      `SELECT * FROM reminders WHERE user_id = ?`,
+      [req.user.id]
+    );
+    res.json({ success: true, reminder: reminder || { enabled: false, reminder_time: '20:00' } });
+  } catch (error) {
+    console.error('获取提醒设置错误:', error);
+    res.status(500).json({ error: '获取提醒设置失败' });
+  }
+});
+
+// 更新提醒设置
+app.post('/api/reminders', authenticateToken, async (req, res) => {
+  try {
+    const { enabled, reminderTime } = req.body;
+
+    // 检查是否已有设置
+    const existing = await db.get('SELECT id FROM reminders WHERE user_id = ?', [req.user.id]);
+
+    if (existing) {
+      await db.run(
+        `UPDATE reminders SET enabled = ?, reminder_time = ?, updated_at = ? WHERE user_id = ?`,
+        [enabled ? 1 : 0, reminderTime || '20:00', Date.now(), req.user.id]
+      );
+    } else {
+      await db.run(
+        `INSERT INTO reminders (user_id, enabled, reminder_time, updated_at) VALUES (?, ?, ?, ?)`,
+        [req.user.id, enabled ? 1 : 0, reminderTime || '20:00', Date.now()]
+      );
+    }
+
+    res.json({ success: true, message: '提醒设置已保存' });
+  } catch (error) {
+    console.error('更新提醒设置错误:', error);
+    res.status(500).json({ error: '保存提醒设置失败' });
+  }
+});
+
 // 获取学习进度摘要
 app.get('/api/summary/:sessionId', async (req, res) => {
   try {

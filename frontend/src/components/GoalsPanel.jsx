@@ -1,87 +1,177 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 
-const STORAGE_KEY = 'wutongxue_goals'
-const CHECKIN_KEY = 'wutongxue_checkins'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function GoalsPanel({ isOpen, onClose }) {
+  const { token, isAuthenticated } = useAuth()
   const [goals, setGoals] = useState([])
   const [checkins, setCheckins] = useState([])
   const [newGoal, setNewGoal] = useState('')
-  const [goalType, setGoalType] = useState('daily') // daily, weekly
+  const [goalType, setGoalType] = useState('daily')
   const [targetMinutes, setTargetMinutes] = useState(30)
+  const [isLoading, setIsLoading] = useState(false)
+  const [streak, setStreak] = useState(0)
 
   // 加载数据
   useEffect(() => {
-    const savedGoals = localStorage.getItem(STORAGE_KEY)
-    const savedCheckins = localStorage.getItem(CHECKIN_KEY)
-    if (savedGoals) setGoals(JSON.parse(savedGoals))
-    if (savedCheckins) setCheckins(JSON.parse(savedCheckins))
-  }, [isOpen])
+    if (isOpen && isAuthenticated) {
+      fetchData()
+    }
+  }, [isOpen, isAuthenticated])
 
-  // 保存目标
-  const saveGoals = (newGoals) => {
-    setGoals(newGoals)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newGoals))
-  }
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      const [goalsRes, checkinsRes] = await Promise.all([
+        fetch(`${API_BASE}/api/goals`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE}/api/checkins`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ])
 
-  // 保存打卡
-  const saveCheckins = (newCheckins) => {
-    setCheckins(newCheckins)
-    localStorage.setItem(CHECKIN_KEY, JSON.stringify(newCheckins))
+      if (goalsRes.ok) {
+        const goalsData = await goalsRes.json()
+        setGoals(goalsData.goals.map(g => ({
+          id: g.id,
+          content: g.content,
+          type: g.type,
+          targetMinutes: g.target_minutes,
+          completed: g.completed === 1,
+          createdAt: g.created_at
+        })))
+      }
+
+      if (checkinsRes.ok) {
+        const checkinsData = await checkinsRes.json()
+        setCheckins(checkinsData.checkins.map(c => c.checkin_date))
+      }
+    } catch (error) {
+      console.error('获取数据失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // 添加目标
-  const handleAddGoal = () => {
-    if (!newGoal.trim()) return
+  const handleAddGoal = async () => {
+    if (!newGoal.trim() || !isAuthenticated) return
 
-    const goal = {
-      id: Date.now().toString(),
-      content: newGoal.trim(),
-      type: goalType,
-      targetMinutes,
-      completed: false,
-      createdAt: Date.now()
+    try {
+      const response = await fetch(`${API_BASE}/api/goals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: newGoal.trim(),
+          type: goalType,
+          targetMinutes
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const goal = {
+          id: data.goalId,
+          content: newGoal.trim(),
+          type: goalType,
+          targetMinutes,
+          completed: false,
+          createdAt: Date.now()
+        }
+        setGoals([goal, ...goals])
+        setNewGoal('')
+      }
+    } catch (error) {
+      console.error('添加目标失败:', error)
     }
-
-    saveGoals([goal, ...goals])
-    setNewGoal('')
   }
 
   // 完成目标
-  const handleToggleGoal = (id) => {
-    saveGoals(goals.map(g =>
-      g.id === id ? { ...g, completed: !g.completed } : g
-    ))
+  const handleToggleGoal = async (id) => {
+    const goal = goals.find(g => g.id === id)
+    if (!goal) return
+
+    try {
+      const response = await fetch(`${API_BASE}/api/goals/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ completed: !goal.completed })
+      })
+
+      if (response.ok) {
+        setGoals(goals.map(g =>
+          g.id === id ? { ...g, completed: !g.completed } : g
+        ))
+      }
+    } catch (error) {
+      console.error('更新目标失败:', error)
+    }
   }
 
   // 删除目标
-  const handleDeleteGoal = (id) => {
-    saveGoals(goals.filter(g => g.id !== id))
+  const handleDeleteGoal = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/goals/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        setGoals(goals.filter(g => g.id !== id))
+      }
+    } catch (error) {
+      console.error('删除目标失败:', error)
+    }
   }
 
   // 今日打卡
-  const handleCheckin = () => {
+  const handleCheckin = async () => {
     const today = new Date().toISOString().slice(0, 10)
-    if (checkins.includes(today)) return
+    if (checkins.includes(today) || !isAuthenticated) return
 
-    saveCheckins([today, ...checkins])
+    try {
+      const response = await fetch(`${API_BASE}/api/checkins`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (!data.alreadyChecked) {
+          setCheckins([today, ...checkins])
+          setStreak(data.streak || calculateStreak([today, ...checkins]))
+        }
+      }
+    } catch (error) {
+      console.error('打卡失败:', error)
+    }
   }
 
   // 计算连续打卡天数
-  const calculateStreak = () => {
-    if (checkins.length === 0) return 0
+  const calculateStreak = (checkinList = checkins) => {
+    if (checkinList.length === 0) return 0
 
-    const sortedCheckins = [...checkins].sort().reverse()
+    const sortedCheckins = [...checkinList].sort().reverse()
     const today = new Date().toISOString().slice(0, 10)
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
-    // 如果今天或昨天没打卡，连续天数为0
     if (sortedCheckins[0] !== today && sortedCheckins[0] !== yesterday) {
       return 0
     }
 
-    let streak = 0
+    let streakCount = 0
     let currentDate = new Date(sortedCheckins[0])
 
     for (const checkin of sortedCheckins) {
@@ -89,14 +179,14 @@ function GoalsPanel({ isOpen, onClose }) {
       const diff = Math.floor((currentDate - checkinDate) / 86400000)
 
       if (diff <= 1) {
-        streak++
+        streakCount++
         currentDate = checkinDate
       } else {
         break
       }
     }
 
-    return streak
+    return streakCount
   }
 
   // 检查今天是否已打卡
@@ -106,7 +196,7 @@ function GoalsPanel({ isOpen, onClose }) {
   const getWeekCheckins = () => {
     const week = []
     const today = new Date()
-    const dayOfWeek = today.getDay() || 7 // 周日为7
+    const dayOfWeek = today.getDay() || 7
 
     for (let i = 1; i <= 7; i++) {
       const date = new Date(today)
@@ -123,7 +213,7 @@ function GoalsPanel({ isOpen, onClose }) {
     return week
   }
 
-  const streak = calculateStreak()
+  const currentStreak = calculateStreak()
   const weekCheckins = getWeekCheckins()
 
   if (!isOpen) return null
@@ -155,7 +245,7 @@ function GoalsPanel({ isOpen, onClose }) {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-white">学习打卡</h3>
-                  <p className="text-white/70 text-sm">连续 {streak} 天</p>
+                  <p className="text-white/70 text-sm">连续 {currentStreak} 天</p>
                 </div>
               </div>
               <button
@@ -193,67 +283,85 @@ function GoalsPanel({ isOpen, onClose }) {
             </div>
 
             {/* 打卡按钮 */}
-            <button
-              onClick={handleCheckin}
-              disabled={isTodayCheckedIn}
-              className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                isTodayCheckedIn
-                  ? 'bg-white/30 text-white cursor-not-allowed'
-                  : 'bg-white text-orange-500 hover:bg-white/90 shadow-lg'
-              }`}
-            >
-              {isTodayCheckedIn ? '今日已打卡 ✓' : '立即打卡'}
-            </button>
+            {!isAuthenticated ? (
+              <div className="text-center py-2 text-white/80 text-sm">
+                登录后可使用打卡功能
+              </div>
+            ) : (
+              <button
+                onClick={handleCheckin}
+                disabled={isTodayCheckedIn}
+                className={`w-full py-3 rounded-xl font-semibold transition-all ${
+                  isTodayCheckedIn
+                    ? 'bg-white/30 text-white cursor-not-allowed'
+                    : 'bg-white text-orange-500 hover:bg-white/90 shadow-lg'
+                }`}
+              >
+                {isTodayCheckedIn ? '今日已打卡 ✓' : '立即打卡'}
+              </button>
+            )}
           </div>
 
           {/* 学习目标 */}
           <div className="p-4 border-b border-cream-200 dark:border-warm-700">
             <h4 className="font-semibold text-warm-800 dark:text-cream-100 mb-3">设定学习目标</h4>
 
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={() => setGoalType('daily')}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                  goalType === 'daily'
-                    ? 'bg-warm-600 text-white'
-                    : 'bg-cream-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300'
-                }`}
-              >
-                每日目标
-              </button>
-              <button
-                onClick={() => setGoalType('weekly')}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                  goalType === 'weekly'
-                    ? 'bg-warm-600 text-white'
-                    : 'bg-cream-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300'
-                }`}
-              >
-                每周目标
-              </button>
-            </div>
+            {!isAuthenticated ? (
+              <div className="text-center py-4 text-warm-500 dark:text-warm-400">
+                登录后可设定学习目标
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setGoalType('daily')}
+                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                      goalType === 'daily'
+                        ? 'bg-warm-600 text-white'
+                        : 'bg-cream-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300'
+                    }`}
+                  >
+                    每日目标
+                  </button>
+                  <button
+                    onClick={() => setGoalType('weekly')}
+                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                      goalType === 'weekly'
+                        ? 'bg-warm-600 text-white'
+                        : 'bg-cream-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300'
+                    }`}
+                  >
+                    每周目标
+                  </button>
+                </div>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newGoal}
-                onChange={(e) => setNewGoal(e.target.value)}
-                placeholder="输入学习目标..."
-                className="flex-1 px-3 py-2 rounded-lg border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 placeholder-warm-400 dark:placeholder-warm-500 focus:outline-none focus:ring-2 focus:ring-warm-500"
-              />
-              <button
-                onClick={handleAddGoal}
-                disabled={!newGoal.trim()}
-                className="px-4 py-2 bg-warm-600 hover:bg-warm-700 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-lg transition-colors"
-              >
-                添加
-              </button>
-            </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newGoal}
+                    onChange={(e) => setNewGoal(e.target.value)}
+                    placeholder="输入学习目标..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 placeholder-warm-400 dark:placeholder-warm-500 focus:outline-none focus:ring-2 focus:ring-warm-500"
+                  />
+                  <button
+                    onClick={handleAddGoal}
+                    disabled={!newGoal.trim()}
+                    className="px-4 py-2 bg-warm-600 hover:bg-warm-700 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-lg transition-colors"
+                  >
+                    添加
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 目标列表 */}
           <div className="p-4 overflow-y-auto max-h-[35vh]">
-            {goals.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-warm-200 border-t-warm-600 rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : goals.length === 0 ? (
               <div className="text-center py-8 text-warm-400 dark:text-warm-500">
                 <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -322,7 +430,7 @@ function GoalsPanel({ isOpen, onClose }) {
                 <p className="text-xs text-warm-500 dark:text-warm-400">累计打卡</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-orange-500">{streak}</p>
+                <p className="text-2xl font-bold text-orange-500">{currentStreak}</p>
                 <p className="text-xs text-warm-500 dark:text-warm-400">连续天数</p>
               </div>
               <div>
