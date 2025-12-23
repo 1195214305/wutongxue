@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
 function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
-  const [mode, setMode] = useState(initialMode) // 'login' or 'register'
+  const [mode, setMode] = useState(initialMode) // 'login', 'register', or 'forgot'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMessage, setForgotMessage] = useState('')
 
   const { login, register } = useAuth()
 
@@ -38,6 +39,19 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
   const switchMode = () => {
     setMode(mode === 'login' ? 'register' : 'login')
     setError('')
+    setForgotMessage('')
+  }
+
+  const handleForgotPassword = () => {
+    setMode('forgot')
+    setError('')
+    setForgotMessage('')
+  }
+
+  const handleBackToLogin = () => {
+    setMode('login')
+    setError('')
+    setForgotMessage('')
   }
 
   if (!isOpen) return null
@@ -64,11 +78,15 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-warm-100 dark:bg-warm-700 flex items-center justify-center">
                   <svg className="w-5 h-5 text-warm-600 dark:text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    {mode === 'forgot' ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    )}
                   </svg>
                 </div>
                 <h3 className="text-xl font-serif font-semibold text-warm-800 dark:text-cream-100">
-                  {mode === 'login' ? '欢迎回来' : '创建账号'}
+                  {mode === 'login' ? '欢迎回来' : mode === 'register' ? '创建账号' : '找回密码'}
                 </h3>
               </div>
               <button
@@ -83,11 +101,81 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
             <p className="mt-2 text-sm text-warm-500 dark:text-warm-400">
               {mode === 'login'
                 ? '登录后可在多设备间同步学习记录'
-                : '注册账号，开启你的学习之旅'}
+                : mode === 'register'
+                ? '注册账号，开启你的学习之旅'
+                : '请按照以下方式找回密码'}
             </p>
           </div>
 
           {/* 表单 */}
+          {mode === 'forgot' ? (
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-amber-800 dark:text-amber-300 mb-1">密码找回说明</h4>
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      由于本应用暂未接入邮箱验证系统，如果您忘记了密码，请尝试以下方式：
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 bg-cream-50 dark:bg-warm-700/50 rounded-xl border border-cream-200 dark:border-warm-600">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-600 flex items-center justify-center text-warm-600 dark:text-warm-300 font-medium">
+                      1
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-warm-800 dark:text-cream-100 mb-1">重新注册</h5>
+                      <p className="text-sm text-warm-600 dark:text-warm-400">
+                        使用新的用户名重新注册一个账号，开始新的学习之旅。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-cream-50 dark:bg-warm-700/50 rounded-xl border border-cream-200 dark:border-warm-600">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-600 flex items-center justify-center text-warm-600 dark:text-warm-300 font-medium">
+                      2
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-warm-800 dark:text-cream-100 mb-1">联系开发者</h5>
+                      <p className="text-sm text-warm-600 dark:text-warm-400">
+                        访问 GitHub 项目页面提交 Issue，说明您的用户名，我们会协助您重置密码。
+                      </p>
+                      <a
+                        href="https://github.com/1195214305/wutongxue/issues"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 mt-2 text-sm text-warm-700 dark:text-cream-200 hover:underline"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                        </svg>
+                        前往 GitHub Issues
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBackToLogin}
+                className="w-full py-3 bg-warm-700 hover:bg-warm-800 dark:bg-warm-600 dark:hover:bg-warm-500 text-cream-50 rounded-xl font-medium transition-colors"
+              >
+                返回登录
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {error && (
               <motion.div
@@ -176,6 +264,14 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                   >
                     立即注册
                   </button>
+                  <span className="mx-2">|</span>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-warm-500 dark:text-warm-400 hover:text-warm-700 dark:hover:text-cream-200 hover:underline"
+                  >
+                    忘记密码？
+                  </button>
                 </>
               ) : (
                 <>
@@ -191,6 +287,7 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               )}
             </div>
           </form>
+          )}
 
           {/* 底部提示 */}
           <div className="px-6 pb-6">

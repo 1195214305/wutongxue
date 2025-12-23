@@ -99,7 +99,7 @@ function UserTour({ onComplete }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4"
+          className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto"
         >
           <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-warm overflow-hidden">
             {/* 进度条 */}
