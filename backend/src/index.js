@@ -245,6 +245,44 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+// 管理员密码重置接口（需要管理员密钥）
+app.post('/api/admin/reset-password', async (req, res) => {
+  try {
+    const { adminKey, username, newPassword } = req.body;
+
+    // 验证管理员密钥（使用环境变量中的密钥）
+    const ADMIN_KEY = process.env.ADMIN_KEY || 'wutongxue-admin-2024';
+    if (adminKey !== ADMIN_KEY) {
+      return res.status(403).json({ error: '管理员密钥错误' });
+    }
+
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: '用户名和新密码不能为空' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: '密码至少6个字符' });
+    }
+
+    // 查找用户
+    const user = await db.get('SELECT id FROM users WHERE username = ?', [username]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+
+    // 加密新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 更新密码
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
+
+    res.json({ success: true, message: `用户 ${username} 的密码已重置` });
+  } catch (error) {
+    console.error('重置密码错误:', error);
+    res.status(500).json({ error: '重置密码失败' });
+  }
+});
+
 // ==================== 学习历史接口 ====================
 
 // 获取用户的学习历史
