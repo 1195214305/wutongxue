@@ -209,7 +209,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* 头部 */}
-          <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-500">
+          <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
@@ -268,7 +268,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                     value={newCard.front}
                     onChange={(e) => setNewCard({ ...newCard, front: e.target.value })}
                     placeholder="输入问题或提示词..."
-                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                     rows={3}
                   />
                 </div>
@@ -281,7 +281,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                     value={newCard.back}
                     onChange={(e) => setNewCard({ ...newCard, back: e.target.value })}
                     placeholder="输入答案或解释..."
-                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
                     rows={3}
                   />
                 </div>
@@ -295,14 +295,14 @@ function FlashcardsPanel({ isOpen, onClose }) {
                     value={newCard.tags}
                     onChange={(e) => setNewCard({ ...newCard, tags: e.target.value })}
                     placeholder="例如：数学, 公式, 重要"
-                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 dark:border-warm-600 bg-cream-50 dark:bg-warm-700 text-warm-700 dark:text-cream-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <button
                   onClick={handleCreateCard}
                   disabled={!newCard.front.trim() || !newCard.back.trim()}
-                  className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-xl transition-colors"
+                  className="w-full py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-xl transition-colors"
                 >
                   创建闪卡
                 </button>
@@ -314,7 +314,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                   <span>进度: {currentIndex + 1} / {dueCards.length}</span>
                   <button
                     onClick={() => { setMode('list'); setCurrentIndex(0); }}
-                    className="text-indigo-500 hover:text-indigo-600"
+                    className="text-amber-600 hover:text-amber-700"
                   >
                     退出复习
                   </button>
@@ -323,7 +323,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                 {/* 进度条 */}
                 <div className="h-2 bg-cream-200 dark:bg-warm-600 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 transition-all duration-300"
+                    className="h-full bg-amber-500 transition-all duration-300"
                     style={{ width: `${((currentIndex + 1) / dueCards.length) * 100}%` }}
                   />
                 </div>
@@ -341,7 +341,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                   >
                     {/* 正面 */}
                     <div
-                      className="absolute inset-0 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700 flex items-center justify-center backface-hidden"
+                      className="absolute inset-0 p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 flex items-center justify-center backface-hidden"
                       style={{ backfaceVisibility: 'hidden' }}
                     >
                       <p className="text-xl text-center text-warm-800 dark:text-cream-100">
@@ -351,7 +351,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
 
                     {/* 背面 */}
                     <div
-                      className="absolute inset-0 p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border-2 border-purple-200 dark:border-purple-700 flex items-center justify-center backface-hidden"
+                      className="absolute inset-0 p-6 bg-gradient-to-br from-orange-50 to-warm-50 dark:from-orange-900/20 dark:to-warm-900/20 rounded-2xl border-2 border-orange-200 dark:border-orange-700 flex items-center justify-center backface-hidden"
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                     >
                       <p className="text-xl text-center text-warm-800 dark:text-cream-100">
@@ -411,7 +411,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                   <button
                     onClick={startReview}
                     disabled={dueCards.length === 0}
-                    className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-warm-300 dark:disabled:bg-warm-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -431,9 +431,9 @@ function FlashcardsPanel({ isOpen, onClose }) {
 
                 {/* 统计 */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{flashcards.length}</div>
-                    <div className="text-xs text-indigo-500 dark:text-indigo-400">总卡片</div>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-center">
+                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{flashcards.length}</div>
+                    <div className="text-xs text-amber-500 dark:text-amber-400">总卡片</div>
                   </div>
                   <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl text-center">
                     <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{dueCards.length}</div>
@@ -474,7 +474,7 @@ function FlashcardsPanel({ isOpen, onClose }) {
                                 {card.tags.map((tag, i) => (
                                   <span
                                     key={i}
-                                    className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs rounded-full"
+                                    className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs rounded-full"
                                   >
                                     {tag}
                                   </span>
@@ -497,8 +497,8 @@ function FlashcardsPanel({ isOpen, onClose }) {
                 )}
 
                 {/* 提示 */}
-                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
                     <strong>间隔重复：</strong>系统会根据你的记忆情况自动安排复习时间，帮助你高效记忆知识点。
                   </p>
                 </div>

@@ -34,7 +34,7 @@ function ToolsBar({
       icon: (
         <span className="text-lg">🃏</span>
       ),
-      color: 'from-indigo-500 to-purple-500',
+      color: 'from-amber-500 to-orange-500',
       onClick: onOpenFlashcards
     },
     {
@@ -45,7 +45,7 @@ function ToolsBar({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
       ),
-      color: 'from-teal-500 to-cyan-500',
+      color: 'from-warm-500 to-warm-600',
       onClick: onOpenQuickReview
     },
     {

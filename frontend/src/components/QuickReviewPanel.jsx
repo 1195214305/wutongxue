@@ -87,7 +87,7 @@ function QuickReviewPanel({ isOpen, onClose }) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* 头部 */}
-          <div className="p-6 bg-gradient-to-r from-teal-500 to-cyan-500">
+          <div className="p-6 bg-gradient-to-r from-warm-600 to-warm-500">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
@@ -117,7 +117,7 @@ function QuickReviewPanel({ isOpen, onClose }) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
                   activeTab === tab.id
-                    ? 'text-teal-600 dark:text-teal-400'
+                    ? 'text-warm-700 dark:text-warm-300'
                     : 'text-warm-500 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
                 }`}
               >
@@ -125,7 +125,7 @@ function QuickReviewPanel({ isOpen, onClose }) {
                   <span>{tab.icon}</span>
                   <span>{tab.name}</span>
                   {tab.count > 0 && (
-                    <span className="px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 text-xs rounded-full">
+                    <span className="px-1.5 py-0.5 bg-warm-100 dark:bg-warm-700 text-warm-600 dark:text-warm-300 text-xs rounded-full">
                       {tab.count}
                     </span>
                   )}
@@ -133,7 +133,7 @@ function QuickReviewPanel({ isOpen, onClose }) {
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-warm-600"
                   />
                 )}
               </button>
