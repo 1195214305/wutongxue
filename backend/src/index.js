@@ -251,7 +251,7 @@ app.post('/api/admin/reset-password', async (req, res) => {
     const { adminKey, username, newPassword } = req.body;
 
     // 验证管理员密钥（使用环境变量中的密钥）
-    const ADMIN_KEY = process.env.ADMIN_KEY || 'wutongxue-admin-2024';
+    const ADMIN_KEY = process.env.ADMIN_KEY || 'wutongxue_admin_2025';
     if (adminKey !== ADMIN_KEY) {
       return res.status(403).json({ error: '管理员密钥错误' });
     }
