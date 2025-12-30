@@ -754,9 +754,10 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
         nickname: u.nickname,
         createdAt: u.created_at,
         sessionCount: u.session_count || 0,
+        immersiveCount: u.immersive_count || 0,
         messageCount: u.message_count || 0,
         lastActive: u.last_active || u.created_at,
-        isActive: u.session_count > 0
+        isActive: (u.session_count > 0) || (u.immersive_count > 0)
       }))
     });
   } catch (error) {

@@ -315,7 +315,7 @@ function AdminPanel({ isOpen, onClose }) {
                 ) : activeTab === 'overview' ? (
                   /* 数据概览 */
                   <div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
                         <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.userCount || 0}</p>
                         <p className="text-sm text-warm-500 dark:text-warm-400">总用户数</p>
@@ -326,15 +326,25 @@ function AdminPanel({ isOpen, onClose }) {
                       </div>
                       <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
                         <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.sessionCount || 0}</p>
-                        <p className="text-sm text-warm-500 dark:text-warm-400">学习会话</p>
+                        <p className="text-sm text-warm-500 dark:text-warm-400">情景对话</p>
+                      </div>
+                      <div className="bg-sage-50 dark:bg-sage-900/30 rounded-xl p-4">
+                        <p className="text-2xl font-bold text-sage-700 dark:text-sage-300">{stats?.immersiveSessionCount || 0}</p>
+                        <p className="text-sm text-sage-600 dark:text-sage-400">沉浸式学习</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
+                        <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.messageCount || 0}</p>
+                        <p className="text-sm text-warm-500 dark:text-warm-400">总消息数</p>
+                      </div>
+                      <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
+                        <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.uploadedFileCount || 0}</p>
+                        <p className="text-sm text-warm-500 dark:text-warm-400">上传文件</p>
                       </div>
                       <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
                         <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.todaySessions || 0}</p>
                         <p className="text-sm text-warm-500 dark:text-warm-400">今日会话</p>
-                      </div>
-                      <div className="bg-cream-50 dark:bg-warm-700/50 rounded-xl p-4">
-                        <p className="text-2xl font-bold text-warm-800 dark:text-cream-100">{stats?.messageCount || 0}</p>
-                        <p className="text-sm text-warm-500 dark:text-warm-400">总消息数</p>
                       </div>
                     </div>
 
@@ -402,24 +412,55 @@ function AdminPanel({ isOpen, onClose }) {
                       </div>
                     </div>
 
-                    <h5 className="font-semibold text-warm-800 dark:text-cream-100 mb-3">学习记录 ({selectedUser.sessions?.length || 0})</h5>
-                    {selectedUser.sessions?.length > 0 ? (
-                      <div className="space-y-2">
-                        {selectedUser.sessions.map(session => (
-                          <div key={session.id} className="p-3 bg-cream-50 dark:bg-warm-700/50 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium text-warm-800 dark:text-cream-100">{session.fileName}</p>
-                                <p className="text-xs text-warm-500 dark:text-warm-400">
-                                  {scenarioNames[session.scenario]} | {session.model} | {session.messageCount} 条消息
-                                </p>
+                    <h5 className="font-semibold text-warm-800 dark:text-cream-100 mb-3">
+                      学习记录 ({(selectedUser.sessions?.length || 0) + (selectedUser.immersiveSessions?.length || 0)})
+                    </h5>
+
+                    {/* 沉浸式学习记录 */}
+                    {selectedUser.immersiveSessions?.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-sage-600 dark:text-sage-400 mb-2">沉浸式学习</p>
+                        <div className="space-y-2">
+                          {selectedUser.immersiveSessions.map(session => (
+                            <div key={`immersive-${session.id}`} className="p-3 bg-sage-50 dark:bg-sage-900/20 rounded-lg border border-sage-200 dark:border-sage-800">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-warm-800 dark:text-cream-100">{session.fileName}</p>
+                                  <p className="text-xs text-sage-600 dark:text-sage-400">
+                                    {session.modelUsed} | {session.userProfile?.educationLevel || '未知'} | {Math.round((session.contentLength || 0) / 1000)}K字
+                                  </p>
+                                </div>
+                                <p className="text-xs text-warm-500 dark:text-warm-400">{formatTime(session.createdAt)}</p>
                               </div>
-                              <p className="text-xs text-warm-500 dark:text-warm-400">{formatTime(session.updatedAt)}</p>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    ) : (
+                    )}
+
+                    {/* 情景对话记录 */}
+                    {selectedUser.sessions?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-warm-500 dark:text-warm-400 mb-2">情景对话</p>
+                        <div className="space-y-2">
+                          {selectedUser.sessions.map(session => (
+                            <div key={session.id} className="p-3 bg-cream-50 dark:bg-warm-700/50 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-warm-800 dark:text-cream-100">{session.fileName}</p>
+                                  <p className="text-xs text-warm-500 dark:text-warm-400">
+                                    {scenarioNames[session.scenario] || session.scenario} | {session.model} | {session.messageCount} 条消息
+                                  </p>
+                                </div>
+                                <p className="text-xs text-warm-500 dark:text-warm-400">{formatTime(session.updatedAt)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(!selectedUser.sessions?.length && !selectedUser.immersiveSessions?.length) && (
                       <p className="text-sm text-warm-500 dark:text-warm-400 text-center py-4">暂无学习记录</p>
                     )}
                   </div>
@@ -542,7 +583,12 @@ function AdminPanel({ isOpen, onClose }) {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="text-sm font-medium text-warm-700 dark:text-cream-200">{user.sessionCount} 会话</p>
+                            <p className="text-sm font-medium text-warm-700 dark:text-cream-200">
+                              {user.sessionCount > 0 && <span>{user.sessionCount} 对话</span>}
+                              {user.sessionCount > 0 && user.immersiveCount > 0 && <span> | </span>}
+                              {user.immersiveCount > 0 && <span className="text-sage-600 dark:text-sage-400">{user.immersiveCount} 沉浸</span>}
+                              {user.sessionCount === 0 && user.immersiveCount === 0 && <span>无记录</span>}
+                            </p>
                             <p className="text-xs text-warm-500 dark:text-warm-400">{user.messageCount} 消息</p>
                           </div>
                           {user.isActive ? (
