@@ -1,0 +1,338 @@
+/* PPT讲解样式 - 温暖色系 */
+.ppt-presentation-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ppt-controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.slide-counter {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7A5C48;
+}
+
+.slide-thumbnails {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.thumbnail {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #E8D9CE;
+  border-radius: 6px;
+  color: #7A5C48;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.thumbnail:hover {
+  background: #F5EDE8;
+  border-color: #D4BBA8;
+}
+
+.thumbnail.active {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  border-color: #7A5C48;
+  color: #FAF7F5;
+}
+
+.ppt-slide {
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  padding: 48px;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-content {
+  width: 100%;
+  max-width: 800px;
+}
+
+.slide-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #2A1E17;
+  margin: 0 0 32px 0;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.slide-body {
+  font-size: 18px;
+  line-height: 1.8;
+  color: #2A1E17;
+  margin-bottom: 24px;
+}
+
+.slide-body p {
+  margin: 0 0 16px 0;
+}
+
+.slide-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.slide-bullets li {
+  position: relative;
+  padding-left: 32px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: #2A1E17;
+  margin-bottom: 16px;
+}
+
+.slide-bullets li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  background: #7A5C48;
+  border-radius: 50%;
+}
+
+.slide-image {
+  margin: 32px 0;
+  text-align: center;
+}
+
+.slide-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #E8D9CE;
+}
+
+.slide-notes {
+  margin-top: 32px;
+  padding: 20px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-left: 4px solid #B8967A;
+  border-radius: 12px;
+}
+
+.notes-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7A5C48;
+  margin-bottom: 8px;
+}
+
+.slide-notes p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #5E4636;
+  margin: 0;
+}
+
+.ppt-controls-bottom {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 24px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.ppt-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid #D4BBA8;
+  border-radius: 8px;
+  color: #5E4636;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.ppt-nav-btn:hover:not(:disabled) {
+  background: #F5EDE8;
+  border-color: #B8967A;
+}
+
+.ppt-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.progress-indicator {
+  flex: 1;
+}
+
+.progress-bar-ppt {
+  height: 6px;
+  background: #F5EDE8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill-ppt {
+  height: 100%;
+  background: linear-gradient(90deg, #B8967A 0%, #7A5C48 100%);
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ppt-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #7A5C48;
+}
+
+/* 深色模式 */
+.dark .ppt-controls-top {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .slide-counter {
+  color: #B8967A;
+}
+
+.dark .thumbnail {
+  border-color: #5E4636;
+  color: #B8967A;
+}
+
+.dark .thumbnail:hover {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .ppt-slide {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .slide-title {
+  color: #FAF7F5;
+}
+
+.dark .slide-body {
+  color: #FAF7F5;
+}
+
+.dark .slide-bullets li {
+  color: #FAF7F5;
+}
+
+.dark .slide-bullets li::before {
+  background: #B8967A;
+}
+
+.dark .slide-image img {
+  border-color: #5E4636;
+}
+
+.dark .slide-notes {
+  background: linear-gradient(135deg, #2A1E17 0%, #423024 100%);
+  border-color: #7A5C48;
+}
+
+.dark .notes-header {
+  color: #B8967A;
+}
+
+.dark .slide-notes p {
+  color: #D4BBA8;
+}
+
+.dark .ppt-controls-bottom {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .ppt-nav-btn {
+  border-color: #5E4636;
+  color: #D4BBA8;
+}
+
+.dark .ppt-nav-btn:hover:not(:disabled) {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .progress-bar-ppt {
+  background: #2A1E17;
+}
+
+@media (max-width: 768px) {
+  .ppt-controls-top {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .slide-thumbnails {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ppt-slide {
+    padding: 32px 24px;
+    min-height: 400px;
+  }
+
+  .slide-title {
+    font-size: 28px;
+  }
+
+  .slide-body {
+    font-size: 16px;
+  }
+
+  .slide-bullets li {
+    font-size: 16px;
+  }
+
+  .ppt-controls-bottom {
+    flex-wrap: wrap;
+  }
+
+  .ppt-nav-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .progress-indicator {
+    order: -1;
+    width: 100%;
+  }
+}

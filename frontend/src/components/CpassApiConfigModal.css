@@ -1,0 +1,508 @@
+/* Cpass API 配置模态框样式 - 温暖色系设计 */
+
+.cpass-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(42, 30, 23, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cpass-modal-content {
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px -10px rgba(94, 70, 54, 0.3);
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 头部 */
+.cpass-modal-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #E8D9CE;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF9F3 100%);
+}
+
+.cpass-modal-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.cpass-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #7A5C48;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.cpass-modal-close:hover {
+  background: #F5EDE8;
+  color: #5E4636;
+}
+
+/* 主体内容 */
+.cpass-modal-body {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 信息区域 */
+.cpass-info-section {
+  margin-bottom: 28px;
+  padding: 18px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-left: 3px solid #B8967A;
+  border-radius: 8px;
+}
+
+.cpass-info-text {
+  color: #5E4636;
+  font-size: 15px;
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.cpass-api-info {
+  background: #FEFDFB;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #E8D9CE;
+}
+
+.cpass-api-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #7A5C48;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.cpass-api-info strong {
+  color: #5E4636;
+  font-weight: 600;
+}
+
+/* 密钥配置区域 */
+.cpass-key-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.cpass-key-section:hover {
+  border-color: #D4BBA8;
+  box-shadow: 0 4px 12px -3px rgba(150, 116, 90, 0.15);
+}
+
+.cpass-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cpass-section-header h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0;
+  flex: 1;
+}
+
+.cpass-badge {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #B8967A 0%, #96745A 100%);
+  color: #FEFDFB;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+  letter-spacing: 0.02em;
+}
+
+.cpass-badge.codex {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+}
+
+.cpass-section-desc {
+  color: #7A5C48;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+/* 输入框组 */
+.cpass-input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cpass-input {
+  flex: 1;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #2A1E17;
+  transition: all 0.3s ease;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.cpass-input:focus {
+  outline: none;
+  border-color: #96745A;
+  box-shadow: 0 0 0 3px rgba(150, 116, 90, 0.1);
+  background: #FFF;
+}
+
+.cpass-input::placeholder {
+  color: #B8967A;
+}
+
+.cpass-clear-btn {
+  padding: 12px 18px;
+  background: transparent;
+  border: 1px solid #E8D9CE;
+  border-radius: 8px;
+  color: #7A5C48;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cpass-clear-btn:hover {
+  background: #F5EDE8;
+  border-color: #D4BBA8;
+  color: #5E4636;
+}
+
+/* 单选按钮组 */
+.cpass-radio-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.cpass-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 10px 16px;
+  border: 1px solid #E8D9CE;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.cpass-radio-label:hover {
+  background: #FDF9F3;
+  border-color: #D4BBA8;
+}
+
+.cpass-radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #7A5C48;
+}
+
+.cpass-radio-label span {
+  color: #5E4636;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cpass-radio-label:has(input:checked) {
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-color: #96745A;
+}
+
+/* 警告区域 */
+.cpass-warning-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #FEFDFB 100%);
+  border: 1px solid #E8D9CE;
+  border-radius: 8px;
+}
+
+.cpass-warning-section p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #7A5C48;
+  line-height: 1.5;
+}
+
+/* 底部按钮区 */
+.cpass-modal-footer {
+  padding: 20px 28px;
+  border-top: 1px solid #E8D9CE;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: #FEFDFB;
+}
+
+.cpass-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  letter-spacing: -0.01em;
+}
+
+.cpass-btn-cancel {
+  background: transparent;
+  color: #7A5C48;
+  border: 1px solid #D4BBA8;
+}
+
+.cpass-btn-cancel:hover {
+  background: #F5EDE8;
+  border-color: #B8967A;
+  color: #5E4636;
+}
+
+.cpass-btn-save {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  border: none;
+}
+
+.cpass-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -3px rgba(94, 70, 54, 0.4);
+}
+
+.cpass-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 深色模式支持 */
+.dark .cpass-modal-content {
+  background: #2A1E17;
+  border-color: #5E4636;
+}
+
+.dark .cpass-modal-header {
+  background: linear-gradient(135deg, #2A1E17 0%, #423024 100%);
+  border-color: #5E4636;
+}
+
+.dark .cpass-modal-header h2 {
+  color: #FAF7F5;
+}
+
+.dark .cpass-modal-close {
+  color: #B8967A;
+}
+
+.dark .cpass-modal-close:hover {
+  background: #423024;
+  color: #D4BBA8;
+}
+
+.dark .cpass-info-section {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #7A5C48;
+}
+
+.dark .cpass-info-text {
+  color: #D4BBA8;
+}
+
+.dark .cpass-api-info {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .cpass-api-info p {
+  color: #B8967A;
+}
+
+.dark .cpass-api-info strong {
+  color: #D4BBA8;
+}
+
+.dark .cpass-key-section {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .cpass-key-section:hover {
+  border-color: #7A5C48;
+}
+
+.dark .cpass-section-header h3 {
+  color: #FAF7F5;
+}
+
+.dark .cpass-section-desc {
+  color: #B8967A;
+}
+
+.dark .cpass-input {
+  background: #2A1E17;
+  border-color: #5E4636;
+  color: #FAF7F5;
+}
+
+.dark .cpass-input:focus {
+  border-color: #B8967A;
+  background: #423024;
+}
+
+.dark .cpass-input::placeholder {
+  color: #7A5C48;
+}
+
+.dark .cpass-clear-btn {
+  border-color: #5E4636;
+  color: #B8967A;
+}
+
+.dark .cpass-clear-btn:hover {
+  background: #2A1E17;
+  border-color: #7A5C48;
+  color: #D4BBA8;
+}
+
+.dark .cpass-radio-label {
+  border-color: #5E4636;
+}
+
+.dark .cpass-radio-label:hover {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .cpass-radio-label span {
+  color: #D4BBA8;
+}
+
+.dark .cpass-radio-label:has(input:checked) {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #B8967A;
+}
+
+.dark .cpass-warning-section {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #5E4636;
+}
+
+.dark .cpass-warning-section p {
+  color: #B8967A;
+}
+
+.dark .cpass-modal-footer {
+  background: #2A1E17;
+  border-color: #5E4636;
+}
+
+.dark .cpass-btn-cancel {
+  color: #B8967A;
+  border-color: #5E4636;
+}
+
+.dark .cpass-btn-cancel:hover {
+  background: #423024;
+  border-color: #7A5C48;
+  color: #D4BBA8;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .cpass-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .cpass-modal-header {
+    padding: 20px;
+  }
+
+  .cpass-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .cpass-modal-body {
+    padding: 20px;
+  }
+
+  .cpass-key-section {
+    padding: 16px;
+  }
+
+  .cpass-radio-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cpass-modal-footer {
+    padding: 16px 20px;
+    flex-direction: column-reverse;
+  }
+
+  .cpass-btn {
+    width: 100%;
+  }
+}

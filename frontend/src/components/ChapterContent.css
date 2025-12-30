@@ -1,0 +1,549 @@
+/* 章节内容容器 - 温暖色系设计 */
+.chapter-content-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* 章节头部 */
+.chapter-header {
+  margin-bottom: 32px;
+  padding: 32px;
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF9F3 100%);
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+}
+
+.chapter-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2A1E17;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.chapter-summary {
+  font-size: 16px;
+  color: #7A5C48;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 阅读进度 */
+.reading-progress {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5E4636;
+}
+
+.progress-percentage {
+  color: #7A5C48;
+}
+
+.progress-bar-thin {
+  height: 6px;
+  background: #F5EDE8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill-thin {
+  height: 100%;
+  background: linear-gradient(90deg, #B8967A 0%, #7A5C48 100%);
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 段落导航 */
+.paragraph-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.para-nav-btn {
+  position: relative;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid #E8D9CE;
+  border-radius: 8px;
+  color: #7A5C48;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.para-nav-btn:hover {
+  background: #F5EDE8;
+  border-color: #D4BBA8;
+  color: #5E4636;
+}
+
+.para-nav-btn.active {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  border-color: #7A5C48;
+  color: #FAF7F5;
+}
+
+.para-nav-btn.completed {
+  background: #F5EDE8;
+  border-color: #B8967A;
+}
+
+.question-indicator {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* 主内容区 */
+.content-main {
+  margin-bottom: 32px;
+}
+
+.paragraph-content {
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  padding: 40px;
+}
+
+.paragraph-subtitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0 0 20px 0;
+  letter-spacing: -0.02em;
+}
+
+.paragraph-text {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #2A1E17;
+  margin-bottom: 28px;
+}
+
+.paragraph-text p {
+  margin: 0 0 16px 0;
+}
+
+.paragraph-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* 重写的例子 */
+.rewritten-example {
+  margin: 28px 0;
+  padding: 24px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-left: 4px solid #B8967A;
+  border-radius: 12px;
+}
+
+.example-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #7A5C48;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.example-header svg {
+  flex-shrink: 0;
+}
+
+.example-content {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #5E4636;
+}
+
+/* 关键概念 */
+.key-concepts {
+  margin: 28px 0;
+  padding: 24px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.key-concepts h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5E4636;
+  margin: 0 0 16px 0;
+}
+
+.concepts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.concept-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #FEFDFB 100%);
+  border-radius: 8px;
+}
+
+.concept-term {
+  font-size: 15px;
+  font-weight: 600;
+  color: #7A5C48;
+}
+
+.concept-definition {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5E4636;
+}
+
+/* 段落操作按钮 */
+.paragraph-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #E8D9CE;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.action-btn.secondary {
+  background: transparent;
+  border: 1px solid #D4BBA8;
+  color: #5E4636;
+}
+
+.action-btn.secondary:hover:not(:disabled) {
+  background: #F5EDE8;
+  border-color: #B8967A;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  border: none;
+}
+
+.action-btn.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -3px rgba(94, 70, 54, 0.4);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn svg {
+  flex-shrink: 0;
+}
+
+/* 完成横幅 */
+.completion-banner {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  animation: slideUpBanner 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpBanner {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.completion-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 32px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px -10px rgba(94, 70, 54, 0.3);
+}
+
+.completion-content svg {
+  flex-shrink: 0;
+}
+
+.completion-content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0 0 4px 0;
+}
+
+.completion-content p {
+  font-size: 14px;
+  color: #7A5C48;
+  margin: 0;
+}
+
+.btn-complete {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-complete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -3px rgba(94, 70, 54, 0.4);
+}
+
+/* 深色模式 */
+.dark .chapter-header {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #5E4636;
+}
+
+.dark .chapter-title {
+  color: #FAF7F5;
+}
+
+.dark .chapter-summary {
+  color: #B8967A;
+}
+
+.dark .reading-progress {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .progress-info {
+  color: #D4BBA8;
+}
+
+.dark .progress-percentage {
+  color: #B8967A;
+}
+
+.dark .progress-bar-thin {
+  background: #2A1E17;
+}
+
+.dark .paragraph-nav {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .para-nav-btn {
+  border-color: #5E4636;
+  color: #B8967A;
+}
+
+.dark .para-nav-btn:hover {
+  background: #2A1E17;
+  border-color: #7A5C48;
+  color: #D4BBA8;
+}
+
+.dark .para-nav-btn.completed {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .paragraph-content {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .paragraph-subtitle {
+  color: #FAF7F5;
+}
+
+.dark .paragraph-text {
+  color: #FAF7F5;
+}
+
+.dark .rewritten-example {
+  background: linear-gradient(135deg, #2A1E17 0%, #423024 100%);
+  border-color: #7A5C48;
+}
+
+.dark .example-header {
+  color: #B8967A;
+}
+
+.dark .example-content {
+  color: #D4BBA8;
+}
+
+.dark .key-concepts {
+  background: #2A1E17;
+  border-color: #5E4636;
+}
+
+.dark .key-concepts h4 {
+  color: #D4BBA8;
+}
+
+.dark .concept-item {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+}
+
+.dark .concept-term {
+  color: #B8967A;
+}
+
+.dark .concept-definition {
+  color: #D4BBA8;
+}
+
+.dark .paragraph-actions {
+  border-color: #5E4636;
+}
+
+.dark .action-btn.secondary {
+  border-color: #5E4636;
+  color: #D4BBA8;
+}
+
+.dark .action-btn.secondary:hover:not(:disabled) {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .completion-content {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .completion-content h4 {
+  color: #FAF7F5;
+}
+
+.dark .completion-content p {
+  color: #B8967A;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .chapter-header {
+    padding: 24px;
+  }
+
+  .chapter-title {
+    font-size: 26px;
+  }
+
+  .chapter-summary {
+    font-size: 15px;
+  }
+
+  .reading-progress {
+    padding: 16px;
+  }
+
+  .paragraph-nav {
+    padding: 16px;
+  }
+
+  .para-nav-btn {
+    min-width: 40px;
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .paragraph-content {
+    padding: 24px;
+  }
+
+  .paragraph-subtitle {
+    font-size: 20px;
+  }
+
+  .paragraph-text {
+    font-size: 16px;
+  }
+
+  .rewritten-example {
+    padding: 20px;
+  }
+
+  .key-concepts {
+    padding: 20px;
+  }
+
+  .paragraph-actions {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .completion-banner {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+
+  .completion-content {
+    flex-direction: column;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .btn-complete {
+    width: 100%;
+  }
+}

@@ -21,6 +21,7 @@ import FlashcardsPanel from './components/FlashcardsPanel'
 import QuickReviewPanel from './components/QuickReviewPanel'
 import FocusMode from './components/FocusMode'
 import ChangePasswordModal from './components/ChangePasswordModal'
+import ImmersiveLearning from './components/ImmersiveLearning'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // localStorage keys
@@ -34,13 +35,14 @@ const STORAGE_KEYS = {
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
 
 function AppContent() {
-  const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话
+  const [step, setStep] = useState(1) // 1: 上传, 2: 选择场景, 3: 学习对话, 4: 沉浸式学习
   const [sessionId, setSessionId] = useState(null)
   const [fileName, setFileName] = useState('')
   const [fileContent, setFileContent] = useState('')
   const [scenario, setScenario] = useState(null)
   const [currentModel, setCurrentModel] = useState('qwen-turbo')
   const [restoredMessages, setRestoredMessages] = useState(null) // 恢复的历史消息
+  const [showImmersiveLearning, setShowImmersiveLearning] = useState(false) // 沉浸式学习模式
 
   const { user, token, isAuthenticated } = useAuth()
 
@@ -313,6 +315,16 @@ function AppContent() {
     }
   }
 
+  // 开始沉浸式学习
+  const handleStartImmersiveLearning = () => {
+    setShowImmersiveLearning(true)
+  }
+
+  // 退出沉浸式学习
+  const handleExitImmersiveLearning = () => {
+    setShowImmersiveLearning(false)
+  }
+
   // 恢复历史会话
   const handleRestoreHistory = async (historyItem) => {
     const session = await getSession(historyItem.id, historyItem.isCloud)
@@ -463,6 +475,8 @@ function AppContent() {
                 history={history}
                 onRestoreHistory={handleRestoreHistory}
                 onDeleteHistory={handleDeleteHistory}
+                uploadedFile={fileContent ? { fileName, content: fileContent } : null}
+                onStartImmersiveLearning={handleStartImmersiveLearning}
               />
             </motion.div>
           )}
@@ -505,6 +519,22 @@ function AppContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* 沉浸式学习模式 */}
+        {showImmersiveLearning && fileContent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-warm-50 dark:bg-warm-900"
+          >
+            <ImmersiveLearning
+              fileContent={fileContent}
+              fileName={fileName}
+              onBack={handleExitImmersiveLearning}
+            />
+          </motion.div>
+        )}
       </main>
 
       {/* 底部 GitHub 链接和隐藏管理入口 */}

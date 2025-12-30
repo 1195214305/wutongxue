@@ -1,0 +1,408 @@
+/* 思维导图样式 - 温暖色系 */
+.mindmap-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.mindmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF9F3 100%);
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+}
+
+.mindmap-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0;
+}
+
+.mindmap-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #E8D9CE;
+  border-radius: 8px;
+  color: #7A5C48;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+  background: #F5EDE8;
+  border-color: #D4BBA8;
+}
+
+.mindmap-content {
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.mindmap-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tree-node {
+  border-left: 3px solid #E8D9CE;
+  padding-left: 20px;
+  transition: all 0.3s ease;
+}
+
+.tree-node:hover {
+  border-color: #D4BBA8;
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.node-header:hover {
+  background: #FDF9F3;
+  border-color: #D4BBA8;
+  transform: translateX(4px);
+}
+
+.node-header.current {
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-color: #B8967A;
+  box-shadow: 0 2px 8px rgba(150, 116, 90, 0.15);
+}
+
+.expand-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #7A5C48;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.expand-btn:hover {
+  background: #F5EDE8;
+}
+
+.node-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  border-radius: 10px;
+}
+
+.chapter-icon {
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+}
+
+.node-content {
+  flex: 1;
+}
+
+.node-content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7A5C48;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.node-content p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2A1E17;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.node-children {
+  margin-top: 16px;
+  padding-left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.child-node {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, #FDF9F3 0%, #FEFDFB 100%);
+  border: 1px solid #E8D9CE;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.child-node:hover {
+  border-color: #D4BBA8;
+  box-shadow: 0 2px 6px rgba(150, 116, 90, 0.1);
+}
+
+.child-node .node-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #B8967A 0%, #96745A 100%);
+  border-radius: 8px;
+}
+
+.child-content {
+  flex: 1;
+}
+
+.child-label {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7A5C48;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.child-content p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5E4636;
+  margin: 0;
+}
+
+.concepts-list,
+.paragraphs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.concepts-list li,
+.paragraphs-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5E4636;
+  margin-bottom: 6px;
+}
+
+.concepts-list li::before,
+.paragraphs-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  background: #B8967A;
+  border-radius: 50%;
+}
+
+.has-question {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CD 100%);
+  border: 1px solid #FFC107;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #F57C00;
+}
+
+/* 深色模式 */
+.dark .mindmap-header {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #5E4636;
+}
+
+.dark .mindmap-header h2 {
+  color: #FAF7F5;
+}
+
+.dark .control-btn {
+  border-color: #5E4636;
+  color: #B8967A;
+}
+
+.dark .control-btn:hover {
+  background: #2A1E17;
+  border-color: #7A5C48;
+}
+
+.dark .mindmap-content {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .tree-node {
+  border-color: #5E4636;
+}
+
+.dark .tree-node:hover {
+  border-color: #7A5C48;
+}
+
+.dark .node-header {
+  background: #2A1E17;
+  border-color: #5E4636;
+}
+
+.dark .node-header:hover {
+  background: #423024;
+  border-color: #7A5C48;
+}
+
+.dark .node-header.current {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #7A5C48;
+}
+
+.dark .expand-btn {
+  color: #B8967A;
+}
+
+.dark .expand-btn:hover {
+  background: #423024;
+}
+
+.dark .node-content h3 {
+  color: #B8967A;
+}
+
+.dark .node-content p {
+  color: #FAF7F5;
+}
+
+.dark .child-node {
+  background: linear-gradient(135deg, #2A1E17 0%, #423024 100%);
+  border-color: #5E4636;
+}
+
+.dark .child-node:hover {
+  border-color: #7A5C48;
+}
+
+.dark .child-label {
+  color: #B8967A;
+}
+
+.dark .child-content p {
+  color: #D4BBA8;
+}
+
+.dark .concepts-list li,
+.dark .paragraphs-list li {
+  color: #D4BBA8;
+}
+
+.dark .concepts-list li::before,
+.dark .paragraphs-list li::before {
+  background: #7A5C48;
+}
+
+.dark .has-question {
+  background: linear-gradient(135deg, #3E2723 0%, #4E342E 100%);
+  border-color: #FF8F00;
+  color: #FFB74D;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .mindmap-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .mindmap-controls {
+    width: 100%;
+  }
+
+  .control-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .mindmap-content {
+    padding: 20px;
+  }
+
+  .tree-node {
+    padding-left: 12px;
+  }
+
+  .node-header {
+    padding: 12px;
+  }
+
+  .node-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .node-content h3 {
+    font-size: 12px;
+  }
+
+  .node-content p {
+    font-size: 14px;
+  }
+
+  .node-children {
+    padding-left: 16px;
+  }
+
+  .child-node {
+    padding: 12px;
+  }
+
+  .child-node .node-icon {
+    width: 28px;
+    height: 28px;
+  }
+}

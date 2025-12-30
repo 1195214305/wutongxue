@@ -1,0 +1,415 @@
+/* 互动问题容器 - 温暖色系设计 */
+.interactive-question-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 20px;
+}
+
+.question-card {
+  width: 100%;
+  max-width: 700px;
+  background: #FEFDFB;
+  border: 1px solid #E8D9CE;
+  border-radius: 16px;
+  padding: 32px;
+  animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 问题头部 */
+.question-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #E8D9CE;
+}
+
+.question-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-radius: 10px;
+  color: #7A5C48;
+}
+
+.question-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2A1E17;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* 问题内容 */
+.question-content {
+  margin-bottom: 20px;
+}
+
+.question-text {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #2A1E17;
+  margin: 0 0 24px 0;
+}
+
+/* 选项列表 */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: #FEFDFB;
+  border: 2px solid #E8D9CE;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.option-btn:hover:not(:disabled) {
+  background: #FDF9F3;
+  border-color: #D4BBA8;
+  transform: translateX(4px);
+}
+
+.option-btn.selected {
+  background: linear-gradient(135deg, #FDF9F3 0%, #F5EDE8 100%);
+  border-color: #B8967A;
+}
+
+.option-btn.correct {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border-color: #66BB6A;
+  animation: correctPulse 0.5s ease;
+}
+
+.option-btn.wrong {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+  border-color: #EF5350;
+  animation: wrongShake 0.5s ease;
+}
+
+@keyframes correctPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes wrongShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+.option-btn:disabled {
+  cursor: not-allowed;
+}
+
+.option-letter {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.option-btn.correct .option-letter {
+  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+}
+
+.option-btn.wrong .option-letter {
+  background: linear-gradient(135deg, #EF5350 0%, #E53935 100%);
+}
+
+.option-text {
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #2A1E17;
+}
+
+.result-icon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.option-btn.correct .result-icon {
+  color: #4CAF50;
+}
+
+.option-btn.wrong .result-icon {
+  color: #E53935;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #7A5C48 0%, #5E4636 100%);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -5px rgba(94, 70, 54, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 结果反馈 */
+.result-feedback {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 12px;
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-feedback.correct {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border: 2px solid #66BB6A;
+}
+
+.result-feedback.wrong {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+  border: 2px solid #EF5350;
+}
+
+.feedback-icon {
+  flex-shrink: 0;
+}
+
+.result-feedback.correct .feedback-icon {
+  color: #4CAF50;
+}
+
+.result-feedback.wrong .feedback-icon {
+  color: #E53935;
+}
+
+.feedback-content {
+  flex: 1;
+}
+
+.feedback-content h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.result-feedback.correct h4 {
+  color: #2E7D32;
+}
+
+.result-feedback.wrong h4 {
+  color: #C62828;
+}
+
+.feedback-explanation {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.result-feedback.correct .feedback-explanation {
+  color: #1B5E20;
+}
+
+.result-feedback.wrong .feedback-explanation {
+  color: #B71C1C;
+}
+
+/* 提示信息 */
+.question-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CD 100%);
+  border-left: 3px solid #FFC107;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #F57C00;
+  line-height: 1.5;
+}
+
+.question-hint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* 深色模式 */
+.dark .question-card {
+  background: #423024;
+  border-color: #5E4636;
+}
+
+.dark .question-header {
+  border-color: #5E4636;
+}
+
+.dark .question-icon {
+  background: linear-gradient(135deg, #2A1E17 0%, #423024 100%);
+  color: #B8967A;
+}
+
+.dark .question-header h3 {
+  color: #FAF7F5;
+}
+
+.dark .question-text {
+  color: #FAF7F5;
+}
+
+.dark .option-btn {
+  background: #2A1E17;
+  border-color: #5E4636;
+}
+
+.dark .option-btn:hover:not(:disabled) {
+  background: #423024;
+  border-color: #7A5C48;
+}
+
+.dark .option-btn.selected {
+  background: linear-gradient(135deg, #423024 0%, #2A1E17 100%);
+  border-color: #7A5C48;
+}
+
+.dark .option-text {
+  color: #FAF7F5;
+}
+
+.dark .question-hint {
+  background: linear-gradient(135deg, #3E2723 0%, #4E342E 100%);
+  border-color: #FF8F00;
+  color: #FFB74D;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .question-card {
+    padding: 24px;
+  }
+
+  .question-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .question-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .question-header h3 {
+    font-size: 16px;
+  }
+
+  .question-text {
+    font-size: 16px;
+  }
+
+  .options-list {
+    gap: 10px;
+  }
+
+  .option-btn {
+    padding: 14px 16px;
+  }
+
+  .option-letter {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .option-text {
+    font-size: 15px;
+  }
+
+  .submit-btn {
+    padding: 14px 28px;
+    font-size: 15px;
+  }
+
+  .result-feedback {
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .feedback-content h4 {
+    font-size: 16px;
+  }
+
+  .feedback-explanation {
+    font-size: 14px;
+  }
+
+  .question-hint {
+    padding: 14px;
+    font-size: 13px;
+  }
+}

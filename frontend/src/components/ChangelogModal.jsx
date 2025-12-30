@@ -2,6 +2,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.8.0',
+    date: '2025-12-30',
+    highlighted: true,
+    highlightLabel: '沉浸式学习',
+    changes: [
+      { type: 'feature', text: '沉浸式学习模式 - Learn Your Way 风格的个性化学习体验' },
+      { type: 'feature', text: '个性化课本 - 根据教育水平和兴趣爱好定制学习内容' },
+      { type: 'feature', text: '实时互动问题 - 每读完一段就有AI生成的小问题' },
+      { type: 'feature', text: '章节测验系统 - 每章节结束后的概念测试' },
+      { type: 'feature', text: 'PPT讲解功能 - 自动生成带讲解笔记的幻灯片' },
+      { type: 'feature', text: '思维导图 - 可折叠的知识结构导图' },
+      { type: 'feature', text: 'Cpass.cc API支持 - 支持高质量AI模型（Claude Opus 4.5、GPT-5等）' },
+      { type: 'improve', text: '优化UI设计，避免AI味儿，采用温暖色系' },
+      { type: 'improve', text: '新增明显的沉浸式学习入口按钮' }
+    ]
+  },
+  {
     version: 'v1.7.3',
     date: '2025-12-23',
     highlighted: true,
