@@ -5,14 +5,59 @@ import MusicPlayer from './MusicPlayer'
 import PomodoroTimer from './PomodoroTimer'
 import SettingsPanel from './SettingsPanel'
 
-const MODELS = [
-  { id: 'qwen-turbo', name: 'Qwen Turbo', desc: '快速响应，适合日常学习' },
-  { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
-]
+// 模型分组配置
+const MODEL_GROUPS = {
+  qwen: {
+    name: '通义千问',
+    desc: '阿里云大模型',
+    models: [
+      { id: 'qwen-turbo', name: 'Qwen Turbo', desc: '快速响应，适合日常学习' },
+      { id: 'qwen-max', name: 'Qwen Max', desc: '更强理解力，适合复杂内容' }
+    ]
+  },
+  cpass_cc_special: {
+    name: 'Claude 系列',
+    desc: 'CC特价分组 - 需配置API Key',
+    requiresKey: true,
+    keyStorageKey: 'cpass_cc_special_key',
+    models: [
+      { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', desc: '快速高效，性价比最高' },
+      { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', desc: '平衡性能与速度' },
+      { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', desc: '最强性能，深度理解' }
+    ]
+  },
+  cpass_codex: {
+    name: 'GPT 系列',
+    desc: 'Codex分组 - 需配置API Key',
+    requiresKey: true,
+    keyStorageKey: 'cpass_codex_key',
+    models: [
+      { id: 'gpt-5.1-thinking', name: 'GPT-5.1 Thinking', desc: '深度思考，适合复杂分析' },
+      { id: 'gpt-5.2', name: 'GPT-5.2', desc: '最新版本，全能型' }
+    ]
+  }
+}
+
+// 获取所有模型的扁平列表
+const getAllModels = () => {
+  const models = []
+  Object.entries(MODEL_GROUPS).forEach(([groupId, group]) => {
+    group.models.forEach(model => {
+      models.push({ ...model, groupId, groupName: group.name, requiresKey: group.requiresKey, keyStorageKey: group.keyStorageKey })
+    })
+  })
+  return models
+}
+
+const ALL_MODELS = getAllModels()
 
 function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkModeToggle, onShowHelp, onShowChangelog, onShowAuth, fontSize, onFontSizeChange, onShowChangePassword }) {
   const [showModelMenu, setShowModelMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false)
+  const [pendingModel, setPendingModel] = useState(null)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [apiKeyGroup, setApiKeyGroup] = useState(null)
   const modelMenuRef = useRef(null)
   const userMenuRef = useRef(null)
 
@@ -32,9 +77,56 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const currentModelInfo = MODELS.find(m => m.id === currentModel) || MODELS[0]
+  const currentModelInfo = ALL_MODELS.find(m => m.id === currentModel) || ALL_MODELS[0]
+
+  // 处理模型选择
+  const handleModelSelect = (model) => {
+    if (model.requiresKey) {
+      // 检查是否已配置 API Key
+      const savedKey = localStorage.getItem(model.keyStorageKey)
+      if (!savedKey) {
+        // 需要配置 API Key
+        setPendingModel(model)
+        setApiKeyGroup(model.groupId)
+        setApiKeyInput('')
+        setShowApiKeyModal(true)
+        setShowModelMenu(false)
+        return
+      }
+    }
+    onModelChange(model.id)
+    setShowModelMenu(false)
+  }
+
+  // 保存 API Key 并切换模型
+  const handleSaveApiKey = () => {
+    if (apiKeyInput.trim() && pendingModel) {
+      localStorage.setItem(pendingModel.keyStorageKey, apiKeyInput.trim())
+      onModelChange(pendingModel.id)
+      setShowApiKeyModal(false)
+      setPendingModel(null)
+      setApiKeyInput('')
+      setApiKeyGroup(null)
+    }
+  }
+
+  // 获取模型的显示名称（简短版）
+  const getShortModelName = (modelId) => {
+    if (modelId.startsWith('qwen')) return modelId === 'qwen-turbo' ? 'Turbo' : 'Max'
+    if (modelId.startsWith('claude')) {
+      if (modelId.includes('haiku')) return 'Haiku'
+      if (modelId.includes('sonnet')) return 'Sonnet'
+      if (modelId.includes('opus')) return 'Opus'
+    }
+    if (modelId.startsWith('gpt')) {
+      if (modelId.includes('5.1')) return 'GPT-5.1'
+      if (modelId.includes('5.2')) return 'GPT-5.2'
+    }
+    return modelId
+  }
 
   return (
+    <>
     <header className="border-b border-cream-200 dark:border-warm-700 bg-cream-50/80 dark:bg-warm-900/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
@@ -116,7 +208,7 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 <span className="text-warm-700 dark:text-cream-200 font-medium hidden sm:inline">{currentModelInfo.name}</span>
-                <span className="text-warm-700 dark:text-cream-200 font-medium sm:hidden">{currentModel === 'qwen-turbo' ? 'Turbo' : 'Max'}</span>
+                <span className="text-warm-700 dark:text-cream-200 font-medium sm:hidden">{getShortModelName(currentModel)}</span>
                 <svg className={`w-4 h-4 text-warm-400 transition-transform ${showModelMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -129,37 +221,59 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-64 bg-white dark:bg-warm-800 rounded-xl shadow-warm border border-cream-200 dark:border-warm-700 overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-80 bg-white dark:bg-warm-800 rounded-xl shadow-warm border border-cream-200 dark:border-warm-700 overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
                   >
-                    <div className="p-2">
-                      {MODELS.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => {
-                            onModelChange(model.id)
-                            setShowModelMenu(false)
-                          }}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
-                            currentModel === model.id
-                              ? 'bg-warm-100 dark:bg-warm-700 text-warm-800 dark:text-cream-100'
-                              : 'hover:bg-cream-50 dark:hover:bg-warm-700/50 text-warm-600 dark:text-warm-300'
-                          }`}
-                        >
+                    {Object.entries(MODEL_GROUPS).map(([groupId, group], groupIndex) => (
+                      <div key={groupId}>
+                        {groupIndex > 0 && <div className="border-t border-cream-200 dark:border-warm-700" />}
+                        <div className="px-3 py-2 bg-cream-50 dark:bg-warm-900">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium">{model.name}</span>
-                            {currentModel === model.id && (
-                              <svg className="w-4 h-4 text-warm-600 dark:text-warm-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
+                            <span className="text-xs font-semibold text-warm-600 dark:text-warm-300 uppercase tracking-wide">{group.name}</span>
+                            {group.requiresKey && (
+                              <span className="text-xs px-1.5 py-0.5 bg-warm-200 dark:bg-warm-700 text-warm-600 dark:text-warm-300 rounded">需API Key</span>
                             )}
                           </div>
-                          <p className="text-xs text-warm-400 dark:text-warm-500 mt-0.5">{model.desc}</p>
-                        </button>
-                      ))}
-                    </div>
+                          <p className="text-xs text-warm-400 dark:text-warm-500 mt-0.5">{group.desc}</p>
+                        </div>
+                        <div className="p-2">
+                          {group.models.map((model) => {
+                            const fullModel = { ...model, groupId, requiresKey: group.requiresKey, keyStorageKey: group.keyStorageKey }
+                            const hasKey = !group.requiresKey || localStorage.getItem(group.keyStorageKey)
+                            return (
+                              <button
+                                key={model.id}
+                                onClick={() => handleModelSelect(fullModel)}
+                                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
+                                  currentModel === model.id
+                                    ? 'bg-warm-100 dark:bg-warm-700 text-warm-800 dark:text-cream-100'
+                                    : 'hover:bg-cream-50 dark:hover:bg-warm-700/50 text-warm-600 dark:text-warm-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{model.name}</span>
+                                    {group.requiresKey && !hasKey && (
+                                      <svg className="w-4 h-4 text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  {currentModel === model.id && (
+                                    <svg className="w-4 h-4 text-warm-600 dark:text-warm-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <p className="text-xs text-warm-400 dark:text-warm-500 mt-0.5">{model.desc}</p>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                     <div className="px-3 py-2 bg-cream-50 dark:bg-warm-900 border-t border-cream-200 dark:border-warm-700">
                       <p className="text-xs text-warm-400 dark:text-warm-500">
-                        Qwen Max 理解能力更强，但响应稍慢
+                        Claude/GPT 模型需要配置 Cpass.cc API Key
                       </p>
                     </div>
                   </motion.div>
@@ -265,6 +379,88 @@ function Header({ step, onReset, currentModel, onModelChange, darkMode, onDarkMo
         </div>
       </div>
     </header>
+
+      {/* API Key 配置模态框 */}
+      <AnimatePresence>
+        {showApiKeyModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowApiKeyModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl max-w-md w-full p-6"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-warm-100 dark:bg-warm-700 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-warm-600 dark:text-warm-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-warm-800 dark:text-cream-100">配置 API Key</h3>
+                  <p className="text-sm text-warm-500 dark:text-warm-400">
+                    {apiKeyGroup === 'cpass_cc_special' ? 'Claude 系列 (CC特价分组)' : 'GPT 系列 (Codex分组)'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4 p-3 bg-cream-50 dark:bg-warm-900 rounded-lg">
+                <p className="text-xs text-warm-600 dark:text-warm-300 mb-2">
+                  <strong>获取 API Key：</strong>
+                </p>
+                <p className="text-xs text-warm-500 dark:text-warm-400">
+                  访问 <a href="https://api.cpass.cc" target="_blank" rel="noopener noreferrer" className="text-warm-700 dark:text-warm-300 underline">api.cpass.cc</a> 获取对应分组的 API Key
+                </p>
+                <p className="text-xs text-warm-400 dark:text-warm-500 mt-1">
+                  {apiKeyGroup === 'cpass_cc_special'
+                    ? '支持模型：Claude Haiku/Sonnet/Opus 4.5'
+                    : '支持模型：GPT-5.1 Thinking, GPT-5.2'}
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-warm-700 dark:text-cream-200 mb-2">
+                  API Key
+                </label>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="sk-..."
+                  className="w-full px-4 py-3 bg-cream-50 dark:bg-warm-900 border border-cream-200 dark:border-warm-700 rounded-xl text-warm-800 dark:text-cream-100 placeholder-warm-400 dark:placeholder-warm-500 focus:outline-none focus:ring-2 focus:ring-warm-500 dark:focus:ring-warm-400"
+                />
+                <p className="text-xs text-warm-400 dark:text-warm-500 mt-2">
+                  Key 将保存在浏览器本地，不会上传到服务器
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-cream-100 dark:bg-warm-700 text-warm-700 dark:text-cream-200 rounded-xl font-medium hover:bg-cream-200 dark:hover:bg-warm-600 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveApiKey}
+                  disabled={!apiKeyInput.trim()}
+                  className="flex-1 px-4 py-2.5 bg-warm-700 dark:bg-warm-600 text-cream-50 rounded-xl font-medium hover:bg-warm-800 dark:hover:bg-warm-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  保存并使用
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

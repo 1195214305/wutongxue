@@ -68,18 +68,83 @@ function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart, onSta
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-cream-100 rounded-full text-sm text-warm-600 mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-cream-100 dark:bg-warm-800 rounded-full text-sm text-warm-600 dark:text-warm-300 mb-4">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           {fileName}
         </div>
-        <h2 className="text-3xl font-serif font-semibold text-warm-800 mb-3">
-          选择学习场景
+        <h2 className="text-3xl font-serif font-semibold text-warm-800 dark:text-cream-100 mb-3">
+          选择学习方式
         </h2>
-        <p className="text-warm-500 text-lg">
-          不同的场景会带来不同的学习体验，选择最适合你的方式
+        <p className="text-warm-500 dark:text-warm-400 text-lg">
+          选择最适合你的学习模式
         </p>
+      </div>
+
+      {/* 沉浸式学习入口 - 放在最显眼的位置 */}
+      {onStartImmersiveLearning && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <div
+            onClick={onStartImmersiveLearning}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-warm-600 via-warm-700 to-warm-800 dark:from-warm-500 dark:via-warm-600 dark:to-warm-700 p-6 cursor-pointer group hover:shadow-xl transition-all duration-300"
+          >
+            {/* 装饰性背景 */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+            <div className="relative flex flex-col sm:flex-row items-center gap-6">
+              {/* 图标 */}
+              <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-10 h-10 text-cream-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+
+              {/* 文字内容 */}
+              <div className="flex-1 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full mb-3">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs font-semibold text-cream-50 uppercase tracking-wide">推荐</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-serif font-bold text-cream-50 mb-2">
+                  沉浸式学习模式
+                </h3>
+                <p className="text-cream-100/90 leading-relaxed mb-3">
+                  AI 为你生成个性化课本，包含实时互动问题、章节测验、PPT讲解和思维导图
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                  {['个性化内容', '互动问题', '章节测验', 'PPT讲解', '思维导图'].map((tag) => (
+                    <span key={tag} className="px-2 py-1 bg-white/10 rounded-full text-xs text-cream-100">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 箭头 */}
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 group-hover:translate-x-1 transition-all duration-300">
+                  <svg className="w-6 h-6 text-cream-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* 分隔线 */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex-1 h-px bg-cream-200 dark:bg-warm-700" />
+        <span className="text-sm text-warm-400 dark:text-warm-500">或选择情景对话模式</span>
+        <div className="flex-1 h-px bg-cream-200 dark:bg-warm-700" />
       </div>
 
       <div className="grid gap-4 mb-10">
@@ -92,19 +157,19 @@ function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart, onSta
               key={scenario.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: 0.2 + index * 0.1 }}
               className={`scenario-card p-6 cursor-pointer ${isSelected ? 'selected' : ''}`}
               onClick={() => handleScenarioClick(scenario.id)}
             >
               <div className="flex items-start gap-5">
-                <div className={`w-14 h-14 rounded-xl ${colors.bg} ${colors.icon} flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-14 h-14 rounded-xl ${colors.bg} dark:bg-opacity-20 ${colors.icon} flex items-center justify-center flex-shrink-0`}>
                   {scenario.icon}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-warm-800">{scenario.title}</h3>
+                    <h3 className="text-lg font-semibold text-warm-800 dark:text-cream-100">{scenario.title}</h3>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      isSelected ? 'border-warm-600 bg-warm-600' : 'border-warm-300'
+                      isSelected ? 'border-warm-600 bg-warm-600 dark:border-warm-400 dark:bg-warm-400' : 'border-warm-300 dark:border-warm-600'
                     }`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,7 +178,7 @@ function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart, onSta
                       )}
                     </div>
                   </div>
-                  <p className="text-warm-500 mt-1">{scenario.description}</p>
+                  <p className="text-warm-500 dark:text-warm-400 mt-1">{scenario.description}</p>
                 </div>
               </div>
             </motion.div>
@@ -129,62 +194,9 @@ function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart, onSta
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          开始学习
+          开始情景对话
         </motion.button>
       </div>
-
-      {/* 沉浸式学习入口 */}
-      {onStartImmersiveLearning && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-10"
-        >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-warm-50 via-cream-50 to-sage-50 dark:from-warm-800 dark:via-warm-800 dark:to-warm-700 border-2 border-warm-200 dark:border-warm-600 p-6 sm:p-8">
-            {/* 装饰性背景 */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-sage-100/50 to-transparent dark:from-sage-900/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-warm-100/50 to-transparent dark:from-warm-900/20 rounded-full blur-3xl" />
-
-            <div className="relative flex flex-col sm:flex-row items-center gap-6">
-              {/* 图标 */}
-              <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-warm-600 to-warm-700 dark:from-warm-500 dark:to-warm-600 flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-cream-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-
-              {/* 文字内容 */}
-              <div className="flex-1 text-center sm:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-warm-600/10 dark:bg-warm-500/20 rounded-full mb-3">
-                  <span className="w-2 h-2 bg-warm-600 dark:bg-warm-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-semibold text-warm-700 dark:text-warm-300 uppercase tracking-wide">全新功能</span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-serif font-semibold text-warm-800 dark:text-cream-100 mb-2">
-                  或者试试沉浸式学习模式
-                </h3>
-                <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 leading-relaxed">
-                  个性化课本 · 实时互动问题 · 章节测验 · PPT讲解 · 思维导图
-                </p>
-              </div>
-
-              {/* 按钮 */}
-              <motion.button
-                onClick={onStartImmersiveLearning}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-warm-600 to-warm-700 dark:from-warm-500 dark:to-warm-600 text-cream-50 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>开始沉浸式学习</span>
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </div>
   )
 }

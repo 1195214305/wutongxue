@@ -2,6 +2,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CHANGELOG = [
   {
+    version: 'v1.8.1',
+    date: '2025-12-30',
+    highlighted: true,
+    highlightLabel: '模型扩展',
+    changes: [
+      { type: 'feature', text: '新增 Claude 系列模型 - Haiku/Sonnet/Opus 4.5' },
+      { type: 'feature', text: '新增 GPT 系列模型 - GPT-5.1 Thinking, GPT-5.2' },
+      { type: 'feature', text: 'API Key 前端配置 - 支持 Cpass.cc 中转站' },
+      { type: 'improve', text: '重新设计沉浸式学习入口 - 更醒目的推荐卡片' },
+      { type: 'improve', text: '模型选择器分组显示 - 更清晰的模型分类' }
+    ]
+  },
+  {
     version: 'v1.8.0',
     date: '2025-12-30',
     highlighted: true,
@@ -13,9 +26,7 @@ const CHANGELOG = [
       { type: 'feature', text: '章节测验系统 - 每章节结束后的概念测试' },
       { type: 'feature', text: 'PPT讲解功能 - 自动生成带讲解笔记的幻灯片' },
       { type: 'feature', text: '思维导图 - 可折叠的知识结构导图' },
-      { type: 'feature', text: 'Cpass.cc API支持 - 支持高质量AI模型（Claude Opus 4.5、GPT-5等）' },
-      { type: 'improve', text: '优化UI设计，避免AI味儿，采用温暖色系' },
-      { type: 'improve', text: '新增明显的沉浸式学习入口按钮' }
+      { type: 'improve', text: '优化UI设计，避免AI味儿，采用温暖色系' }
     ]
   },
   {
