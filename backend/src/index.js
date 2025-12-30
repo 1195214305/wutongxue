@@ -424,7 +424,7 @@ app.post('/api/session/create', optionalAuth, async (req, res) => {
       await db.run(
         `INSERT INTO sessions (id, user_id, file_name, file_content, scenario, model)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [sessionId, req.user.id, fileName, fileContent, scenario, model || 'qwen-turbo']
+        [sessionId, req.user.id, fileName || '', fileContent || '', scenario || null, model || 'qwen-turbo']
       );
     } else {
       // 未登录用户，保存到内存
@@ -697,6 +697,8 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
     const userCountResult = await db.get('SELECT COUNT(*) as count FROM users', []);
     const sessionCountResult = await db.get('SELECT COUNT(*) as count FROM sessions', []);
     const messageCountResult = await db.get('SELECT COUNT(*) as count FROM messages', []);
+    const immersiveCountResult = await db.get('SELECT COUNT(*) as count FROM immersive_sessions', []);
+    const fileCountResult = await db.get('SELECT COUNT(*) as count FROM uploaded_files', []);
 
     // 今日新注册用户
     const today = new Date();
@@ -711,6 +713,8 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
         userCount: userCountResult?.count || 0,
         sessionCount: sessionCountResult?.count || 0,
         messageCount: messageCountResult?.count || 0,
+        immersiveSessionCount: immersiveCountResult?.count || 0,
+        uploadedFileCount: fileCountResult?.count || 0,
         todayUsers: todayUsersResult?.count || 0,
         todaySessions: todaySessionsResult?.count || 0
       }
@@ -732,6 +736,7 @@ app.get('/api/admin/users', adminAuth, async (req, res) => {
         u.created_at,
         COUNT(DISTINCT s.id) as session_count,
         COUNT(m.id) as message_count,
+        (SELECT COUNT(*) FROM immersive_sessions WHERE user_id = u.id) as immersive_count,
         MAX(s.updated_at) as last_active
       FROM users u
       LEFT JOIN sessions s ON u.id = s.user_id
@@ -770,6 +775,7 @@ app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
       return res.status(404).json({ error: '用户不存在' });
     }
 
+    // 获取情景对话会话
     const sessions = await db.all(
       `SELECT
         s.id,
@@ -787,6 +793,23 @@ app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
       [userId]
     );
 
+    // 获取沉浸式学习会话
+    const immersiveSessions = await db.all(
+      `SELECT
+        id,
+        file_name,
+        content_hash,
+        content_length,
+        user_profile,
+        model_used,
+        learning_mode,
+        created_at
+      FROM immersive_sessions
+      WHERE user_id = ?
+      ORDER BY created_at DESC`,
+      [userId]
+    );
+
     res.json({
       success: true,
       user: {
@@ -798,13 +821,111 @@ app.get('/api/admin/users/:userId', adminAuth, async (req, res) => {
           model: s.model,
           createdAt: s.created_at,
           updatedAt: s.updated_at,
-          messageCount: s.message_count || 0
+          messageCount: s.message_count || 0,
+          type: 'scenario'
+        })),
+        immersiveSessions: immersiveSessions.map(s => ({
+          id: s.id,
+          fileName: s.file_name,
+          contentHash: s.content_hash,
+          contentLength: s.content_length,
+          userProfile: s.user_profile ? JSON.parse(s.user_profile) : null,
+          modelUsed: s.model_used,
+          learningMode: s.learning_mode,
+          createdAt: s.created_at,
+          type: 'immersive'
         }))
       }
     });
   } catch (error) {
     console.error('获取用户详情错误:', error);
     res.status(500).json({ error: '获取用户详情失败' });
+  }
+});
+
+// 管理员获取所有沉浸式学习会话
+app.get('/api/admin/immersive-sessions', adminAuth, async (req, res) => {
+  try {
+    const sessions = await db.all(
+      `SELECT
+        i.id,
+        i.user_id,
+        i.file_name,
+        i.content_hash,
+        i.content_length,
+        i.user_profile,
+        i.model_used,
+        i.learning_mode,
+        i.created_at,
+        u.username,
+        u.nickname
+      FROM immersive_sessions i
+      LEFT JOIN users u ON i.user_id = u.id
+      ORDER BY i.created_at DESC
+      LIMIT 100`,
+      []
+    );
+
+    res.json({
+      success: true,
+      sessions: sessions.map(s => ({
+        id: s.id,
+        userId: s.user_id,
+        username: s.username,
+        nickname: s.nickname,
+        fileName: s.file_name,
+        contentHash: s.content_hash,
+        contentLength: s.content_length,
+        userProfile: s.user_profile ? JSON.parse(s.user_profile) : null,
+        modelUsed: s.model_used,
+        learningMode: s.learning_mode,
+        createdAt: s.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('获取沉浸式学习会话列表错误:', error);
+    res.status(500).json({ error: '获取列表失败' });
+  }
+});
+
+// 管理员获取所有上传的文件
+app.get('/api/admin/uploaded-files', adminAuth, async (req, res) => {
+  try {
+    const files = await db.all(
+      `SELECT
+        f.id,
+        f.content_hash,
+        f.file_name,
+        f.file_size,
+        f.upload_count,
+        f.first_uploaded_by,
+        f.created_at,
+        u.username,
+        u.nickname
+      FROM uploaded_files f
+      LEFT JOIN users u ON f.first_uploaded_by = u.id
+      ORDER BY f.created_at DESC
+      LIMIT 100`,
+      []
+    );
+
+    res.json({
+      success: true,
+      files: files.map(f => ({
+        id: f.id,
+        contentHash: f.content_hash,
+        fileName: f.file_name,
+        fileSize: f.file_size,
+        uploadCount: f.upload_count,
+        firstUploadedBy: f.first_uploaded_by,
+        uploaderUsername: f.username,
+        uploaderNickname: f.nickname,
+        createdAt: f.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('获取上传文件列表错误:', error);
+    res.status(500).json({ error: '获取列表失败' });
   }
 });
 
@@ -1509,7 +1630,7 @@ app.delete('/api/flashcards/:cardId', authenticateToken, async (req, res) => {
 // 解析内容并生成沉浸式学习材料
 app.post('/api/immersive-learning/parse', optionalAuth, async (req, res) => {
   try {
-    const { content, fileName, userProfile } = req.body;
+    const { content, fileName, userProfile, model } = req.body;
 
     if (!content) {
       return res.status(400).json({ error: '缺少文件内容' });
@@ -1529,28 +1650,59 @@ app.post('/api/immersive-learning/parse', optionalAuth, async (req, res) => {
       userProfile
     );
 
-    // 如果用户已登录，保存到数据库
+    let sessionId = null;
+
+    // 如果用户已登录，保存完整数据到数据库
     if (req.user) {
       try {
-        await db.run(
-          `INSERT INTO immersive_sessions (user_id, file_name, content, user_profile, chapters_data, created_at)
-           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        // 1. 检查文件是否已存在（通过内容哈希）
+        const existingFile = await db.get(
+          `SELECT id, content_hash FROM uploaded_files WHERE content_hash = ?`,
+          [result.contentHash]
+        );
+
+        if (existingFile) {
+          // 文件已存在，增加上传计数
+          await db.run(
+            `UPDATE uploaded_files SET upload_count = upload_count + 1 WHERE content_hash = ?`,
+            [result.contentHash]
+          );
+          console.log(`文件已存在，复用: ${result.contentHash}`);
+        } else {
+          // 新文件，保存到文件表
+          await db.run(
+            `INSERT INTO uploaded_files (content_hash, file_name, file_content, file_size, first_uploaded_by)
+             VALUES (?, ?, ?, ?, ?)`,
+            [result.contentHash, fileName, content, content.length, req.user.id]
+          );
+          console.log(`新文件已保存: ${result.contentHash}`);
+        }
+
+        // 2. 保存沉浸式学习会话（包含所有生成的内容）
+        const insertResult = await db.run(
+          `INSERT INTO immersive_sessions (user_id, file_name, content_hash, content_length, user_profile, chapters_data, model_used, learning_mode)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             req.user.id,
             fileName,
-            content.substring(0, 10000), // 只保存前10000字符
+            result.contentHash,
+            result.totalLength,
             JSON.stringify(userProfile),
-            JSON.stringify(result.chapters)
+            JSON.stringify(result.chapters),
+            model || 'haiku',
+            'immersive'
           ]
         );
+        sessionId = insertResult.lastInsertRowid;
+        console.log(`沉浸式学习会话已保存，ID: ${sessionId}`);
       } catch (dbError) {
         console.error('保存沉浸式学习会话失败:', dbError);
-        // 不影响返回结果
       }
     }
 
     res.json({
       success: true,
+      sessionId,
       ...result
     });
   } catch (error) {
@@ -1562,21 +1714,27 @@ app.post('/api/immersive-learning/parse', optionalAuth, async (req, res) => {
   }
 });
 
-// 获取用户的沉浸式学习历史
+// 获取用户的沉浸式学习历史（包含完整数据）
 app.get('/api/immersive-learning/history', authenticateToken, async (req, res) => {
   try {
     const sessions = await db.all(
-      `SELECT id, file_name, user_profile, created_at
+      `SELECT id, file_name, content_hash, content_length, user_profile, model_used, learning_mode, created_at
        FROM immersive_sessions
        WHERE user_id = ?
        ORDER BY created_at DESC
-       LIMIT 20`,
+       LIMIT 50`,
       [req.user.id]
     );
 
+    // 解析 user_profile JSON
+    const parsedSessions = sessions.map(s => ({
+      ...s,
+      user_profile: s.user_profile ? JSON.parse(s.user_profile) : null
+    }));
+
     res.json({
       success: true,
-      sessions
+      sessions: parsedSessions
     });
   } catch (error) {
     console.error('获取沉浸式学习历史失败:', error);
@@ -1584,12 +1742,14 @@ app.get('/api/immersive-learning/history', authenticateToken, async (req, res) =
   }
 });
 
-// 获取特定沉浸式学习会话
+// 获取特定沉浸式学习会话（包含所有生成的内容）
 app.get('/api/immersive-learning/session/:id', authenticateToken, async (req, res) => {
   try {
     const session = await db.get(
-      `SELECT * FROM immersive_sessions
-       WHERE id = ? AND user_id = ?`,
+      `SELECT s.*, f.file_content
+       FROM immersive_sessions s
+       LEFT JOIN uploaded_files f ON s.content_hash = f.content_hash
+       WHERE s.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
 
@@ -1600,9 +1760,16 @@ app.get('/api/immersive-learning/session/:id', authenticateToken, async (req, re
     res.json({
       success: true,
       session: {
-        ...session,
-        user_profile: JSON.parse(session.user_profile),
-        chapters: JSON.parse(session.chapters_data)
+        id: session.id,
+        fileName: session.file_name,
+        contentHash: session.content_hash,
+        contentLength: session.content_length,
+        fileContent: session.file_content,
+        userProfile: JSON.parse(session.user_profile),
+        chapters: JSON.parse(session.chapters_data),
+        modelUsed: session.model_used,
+        learningMode: session.learning_mode,
+        createdAt: session.created_at
       }
     });
   } catch (error) {

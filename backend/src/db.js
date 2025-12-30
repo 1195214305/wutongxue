@@ -180,17 +180,36 @@ async function initDatabase() {
       )
     `);
 
-    // 沉浸式学习会话表
+    // 沉浸式学习会话表 - 完整保存所有学习数据
     await db.execute(`
       CREATE TABLE IF NOT EXISTS immersive_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         file_name TEXT NOT NULL,
-        content TEXT,
+        content_hash TEXT,
+        content_length INTEGER,
         user_profile TEXT NOT NULL,
         chapters_data TEXT NOT NULL,
+        model_used TEXT DEFAULT 'haiku',
+        learning_mode TEXT DEFAULT 'immersive',
         created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // 文件存储表 - 用于文件去重
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS uploaded_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content_hash TEXT UNIQUE NOT NULL,
+        file_name TEXT NOT NULL,
+        file_content TEXT NOT NULL,
+        file_size INTEGER,
+        upload_count INTEGER DEFAULT 1,
+        first_uploaded_by TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (first_uploaded_by) REFERENCES users(id)
       )
     `);
 
@@ -206,6 +225,8 @@ async function initDatabase() {
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_user_id ON immersive_sessions(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_content_hash ON immersive_sessions(content_hash)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_uploaded_files_content_hash ON uploaded_files(content_hash)`);
 
     console.log('Turso 数据库初始化成功');
   } catch (error) {
