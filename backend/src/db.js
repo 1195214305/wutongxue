@@ -180,6 +180,20 @@ async function initDatabase() {
       )
     `);
 
+    // 沉浸式学习会话表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS immersive_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        content TEXT,
+        user_profile TEXT NOT NULL,
+        chapters_data TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
     // 创建索引
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`);
@@ -191,6 +205,7 @@ async function initDatabase() {
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_user_id ON immersive_sessions(user_id)`);
 
     console.log('Turso 数据库初始化成功');
   } catch (error) {

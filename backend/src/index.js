@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const WordExtractor = require('word-extractor');
 const db = require('./db');
+const immersiveLearningService = require('./services/immersiveLearningService');
 
 // Word .doc 文件解析器
 const wordExtractor = new WordExtractor();
@@ -1488,6 +1489,115 @@ app.delete('/api/flashcards/:cardId', authenticateToken, async (req, res) => {
     res.status(500).json({ error: '删除闪卡失败' });
   }
 });
+
+// ==================== 沉浸式学习 API ====================
+
+// 解析内容并生成沉浸式学习材料
+app.post('/api/immersive-learning/parse', optionalAuth, async (req, res) => {
+  try {
+    const { content, fileName, userProfile } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: '缺少文件内容' });
+    }
+
+    if (!userProfile || !userProfile.educationLevel) {
+      return res.status(400).json({ error: '缺少用户画像信息' });
+    }
+
+    console.log(`开始为文件 "${fileName}" 生成沉浸式学习材料...`);
+    console.log(`用户画像: 教育水平=${userProfile.educationLevel}, 兴趣=${userProfile.interests?.join(',')}`);
+
+    // 调用沉浸式学习服务生成章节
+    const result = await immersiveLearningService.parseAndGenerateChapters(
+      content,
+      fileName,
+      userProfile
+    );
+
+    // 如果用户已登录，保存到数据库
+    if (req.user) {
+      try {
+        await db.run(
+          `INSERT INTO immersive_sessions (user_id, file_name, content, user_profile, chapters_data, created_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+          [
+            req.user.id,
+            fileName,
+            content.substring(0, 10000), // 只保存前10000字符
+            JSON.stringify(userProfile),
+            JSON.stringify(result.chapters)
+          ]
+        );
+      } catch (dbError) {
+        console.error('保存沉浸式学习会话失败:', dbError);
+        // 不影响返回结果
+      }
+    }
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('生成沉浸式学习材料失败:', error);
+    res.status(500).json({
+      error: '生成学习材料失败',
+      message: error.message
+    });
+  }
+});
+
+// 获取用户的沉浸式学习历史
+app.get('/api/immersive-learning/history', authenticateToken, async (req, res) => {
+  try {
+    const sessions = await db.all(
+      `SELECT id, file_name, user_profile, created_at
+       FROM immersive_sessions
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [req.user.id]
+    );
+
+    res.json({
+      success: true,
+      sessions
+    });
+  } catch (error) {
+    console.error('获取沉浸式学习历史失败:', error);
+    res.status(500).json({ error: '获取历史失败' });
+  }
+});
+
+// 获取特定沉浸式学习会话
+app.get('/api/immersive-learning/session/:id', authenticateToken, async (req, res) => {
+  try {
+    const session = await db.get(
+      `SELECT * FROM immersive_sessions
+       WHERE id = ? AND user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+
+    if (!session) {
+      return res.status(404).json({ error: '会话不存在' });
+    }
+
+    res.json({
+      success: true,
+      session: {
+        ...session,
+        user_profile: JSON.parse(session.user_profile),
+        chapters: JSON.parse(session.chapters_data)
+      }
+    });
+  } catch (error) {
+    console.error('获取沉浸式学习会话失败:', error);
+    res.status(500).json({ error: '获取会话失败' });
+  }
+});
+
+// ==================== 原有路由 ====================
 
 // 获取学习进度摘要
 app.get('/api/summary/:sessionId', async (req, res) => {
