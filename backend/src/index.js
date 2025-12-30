@@ -1778,6 +1778,72 @@ app.get('/api/immersive-learning/session/:id', authenticateToken, async (req, re
   }
 });
 
+// 生成更多章节（用于长文档的后续章节生成）
+app.post('/api/immersive-learning/generate-more', optionalAuth, async (req, res) => {
+  try {
+    const { sessionId, contentHash, startChapter, endChapter, userProfile } = req.body;
+
+    if (!contentHash || !startChapter) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+
+    // 从数据库获取文件内容
+    const file = await db.get(
+      `SELECT file_content, file_name FROM uploaded_files WHERE content_hash = ?`,
+      [contentHash]
+    );
+
+    if (!file) {
+      return res.status(404).json({ error: '文件不存在' });
+    }
+
+    console.log(`生成更多章节: ${startChapter} - ${endChapter || startChapter}`);
+
+    // 生成更多章节
+    const chapters = await immersiveLearningService.generateMoreChapters(
+      file.file_content,
+      file.file_name,
+      userProfile || { educationLevel: 'undergraduate', interests: [] },
+      startChapter,
+      endChapter || startChapter
+    );
+
+    // 如果有 sessionId，更新数据库中的章节数据
+    if (sessionId && req.user) {
+      try {
+        const session = await db.get(
+          `SELECT chapters_data FROM immersive_sessions WHERE id = ? AND user_id = ?`,
+          [sessionId, req.user.id]
+        );
+
+        if (session) {
+          const existingChapters = JSON.parse(session.chapters_data);
+          const updatedChapters = [...existingChapters, ...chapters];
+
+          await db.run(
+            `UPDATE immersive_sessions SET chapters_data = ?, updated_at = datetime('now') WHERE id = ?`,
+            [JSON.stringify(updatedChapters), sessionId]
+          );
+        }
+      } catch (dbError) {
+        console.error('更新章节数据失败:', dbError);
+      }
+    }
+
+    res.json({
+      success: true,
+      chapters,
+      generatedCount: chapters.length
+    });
+  } catch (error) {
+    console.error('生成更多章节失败:', error);
+    res.status(500).json({
+      error: '生成章节失败',
+      message: error.message
+    });
+  }
+});
+
 // ==================== 原有路由 ====================
 
 // 获取学习进度摘要
