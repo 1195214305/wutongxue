@@ -198,6 +198,23 @@ async function initDatabase() {
       )
     `);
 
+    // 迁移：为旧的 immersive_sessions 表添加缺失的列
+    try {
+      await db.execute(`ALTER TABLE immersive_sessions ADD COLUMN content_hash TEXT`);
+    } catch (e) { /* 列已存在，忽略 */ }
+    try {
+      await db.execute(`ALTER TABLE immersive_sessions ADD COLUMN content_length INTEGER`);
+    } catch (e) { /* 列已存在，忽略 */ }
+    try {
+      await db.execute(`ALTER TABLE immersive_sessions ADD COLUMN model_used TEXT DEFAULT 'haiku'`);
+    } catch (e) { /* 列已存在，忽略 */ }
+    try {
+      await db.execute(`ALTER TABLE immersive_sessions ADD COLUMN learning_mode TEXT DEFAULT 'immersive'`);
+    } catch (e) { /* 列已存在，忽略 */ }
+    try {
+      await db.execute(`ALTER TABLE immersive_sessions ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))`);
+    } catch (e) { /* 列已存在，忽略 */ }
+
     // 文件存储表 - 用于文件去重
     await db.execute(`
       CREATE TABLE IF NOT EXISTS uploaded_files (
@@ -213,20 +230,26 @@ async function initDatabase() {
       )
     `);
 
-    // 创建索引
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_checkins_user_id ON checkins(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_wrong_questions_user_id ON wrong_questions(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_user_id ON immersive_sessions(user_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_content_hash ON immersive_sessions(content_hash)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_uploaded_files_content_hash ON uploaded_files(content_hash)`);
+    // 创建索引（使用 try-catch 避免重复创建错误）
+    const createIndexSafe = async (sql) => {
+      try {
+        await db.execute(sql);
+      } catch (e) { /* 索引已存在，忽略 */ }
+    };
+
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_checkins_user_id ON checkins(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_wrong_questions_user_id ON wrong_questions(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_learning_stats_user_id ON learning_stats(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_user_id ON immersive_sessions(user_id)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_immersive_sessions_content_hash ON immersive_sessions(content_hash)`);
+    await createIndexSafe(`CREATE INDEX IF NOT EXISTS idx_uploaded_files_content_hash ON uploaded_files(content_hash)`);
 
     console.log('Turso 数据库初始化成功');
   } catch (error) {
