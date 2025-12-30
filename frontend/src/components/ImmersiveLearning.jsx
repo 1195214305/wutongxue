@@ -42,7 +42,8 @@ const ImmersiveLearning = ({ fileContent, fileName, onBack }) => {
 
     try {
       // 调用后端API解析内容并生成章节
-      const response = await fetch('/api/immersive-learning/parse', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'https://wutongxue-backend.onrender.com'
+      const response = await fetch(`${API_BASE}/api/immersive-learning/parse`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -60,7 +60,7 @@ const colorClasses = {
   }
 }
 
-function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart }) {
+function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart, onStartImmersiveLearning }) {
   const handleScenarioClick = (scenarioId) => {
     onSelect(scenarioId)
   }
@@ -132,6 +132,59 @@ function ScenarioSelector({ fileName, selectedScenario, onSelect, onStart }) {
           开始学习
         </motion.button>
       </div>
+
+      {/* 沉浸式学习入口 */}
+      {onStartImmersiveLearning && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-10"
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-warm-50 via-cream-50 to-sage-50 dark:from-warm-800 dark:via-warm-800 dark:to-warm-700 border-2 border-warm-200 dark:border-warm-600 p-6 sm:p-8">
+            {/* 装饰性背景 */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-sage-100/50 to-transparent dark:from-sage-900/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-warm-100/50 to-transparent dark:from-warm-900/20 rounded-full blur-3xl" />
+
+            <div className="relative flex flex-col sm:flex-row items-center gap-6">
+              {/* 图标 */}
+              <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-warm-600 to-warm-700 dark:from-warm-500 dark:to-warm-600 flex items-center justify-center shadow-lg">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-cream-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+
+              {/* 文字内容 */}
+              <div className="flex-1 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-warm-600/10 dark:bg-warm-500/20 rounded-full mb-3">
+                  <span className="w-2 h-2 bg-warm-600 dark:bg-warm-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-semibold text-warm-700 dark:text-warm-300 uppercase tracking-wide">全新功能</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-serif font-semibold text-warm-800 dark:text-cream-100 mb-2">
+                  或者试试沉浸式学习模式
+                </h3>
+                <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 leading-relaxed">
+                  个性化课本 · 实时互动问题 · 章节测验 · PPT讲解 · 思维导图
+                </p>
+              </div>
+
+              {/* 按钮 */}
+              <motion.button
+                onClick={onStartImmersiveLearning}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-warm-600 to-warm-700 dark:from-warm-500 dark:to-warm-600 text-cream-50 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>开始沉浸式学习</span>
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

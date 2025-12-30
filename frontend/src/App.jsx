@@ -494,6 +494,7 @@ function AppContent() {
                 selectedScenario={scenario}
                 onSelect={handleScenarioSelect}
                 onStart={handleStartLearning}
+                onStartImmersiveLearning={handleStartImmersiveLearning}
               />
             </motion.div>
           )}
